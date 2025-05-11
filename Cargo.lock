@@ -639,6 +639,7 @@ dependencies = [
  "rand",
  "reqwest",
  "tokio",
+ "url",
 ]
 
 [[package]]
