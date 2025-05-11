@@ -1,0 +1,12 @@
+[package]
+name = "layer7benchmark"
+version = "0.1.0"
+edition = "2021"
+description = "A simple benchmark tool for Layer 7 (HTTP) load testing"
+license = "MIT"
+authors = ["shinnku nikaidou <nikaidou@shinnku.com>"]
+
+[dependencies]
+rand = "0.9.1"
+reqwest = { version = "0.12.15", features = ["json"] }
+tokio = { version = "1.45.0", features = ["full"] }
