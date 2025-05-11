@@ -9,5 +9,5 @@ pub struct Args {
     pub url: String,
 
     #[arg(short = 't', long = "time", default_value_t = 60)]
-    pub time: u32,
+    pub time: u64,
 }
