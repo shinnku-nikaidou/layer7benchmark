@@ -10,7 +10,10 @@ use std::{sync::Arc, time::Duration};
 use args::Args;
 use clap::Parser;
 use std::sync::atomic::AtomicU64;
-use tokio::{runtime::Runtime, sync::broadcast};
+use tokio::{
+    runtime::Runtime,
+    sync::{broadcast, watch},
+};
 use url::Url;
 
 async fn run(args: Args) -> Result<()> {
@@ -50,7 +53,7 @@ async fn run(args: Args) -> Result<()> {
         return Ok(());
     }
 
-    let (shutdown_tx, _) = broadcast::channel(1);
+    let (shutdown_tx, shutdown_rx) = watch::channel(false);
 
     for _ in 0..args.concurrent_count {
         let full_request = core_request::FullRequest {
@@ -58,15 +61,11 @@ async fn run(args: Args) -> Result<()> {
             client: client.clone(),
             headers: headers.clone(),
             method: method.clone(),
+            shutdown: shutdown_rx.clone(),
         };
-        let shutdown_rx = shutdown_tx.subscribe();
         let counter_clone = Arc::clone(&request_counter);
 
-        let handle = tokio::spawn(core_request::send_requests(
-            full_request,
-            shutdown_rx,
-            counter_clone,
-        ));
+        let handle = tokio::spawn(core_request::send_requests(full_request, counter_clone));
         handles.push(handle);
     }
 
@@ -76,7 +75,7 @@ async fn run(args: Args) -> Result<()> {
     ));
 
     tokio::time::sleep(Duration::from_secs(args.time)).await;
-    let _ = shutdown_tx.send(());
+    let _ = shutdown_tx.send(true);
 
     for handle in handles {
         if let Err(e) = handle.await {
@@ -89,10 +88,6 @@ async fn run(args: Args) -> Result<()> {
 
 fn main() {
     let args = Args::parse();
-
-    println!("Method is: {}", args.method);
-    println!("Headers are: {:?}", args.header);
-
     let runtime = Runtime::new().expect("Could not build the tokio runtime");
 
     if let Err(error) = runtime.block_on(run(args)) {
