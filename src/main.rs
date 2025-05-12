@@ -8,7 +8,7 @@ use std::{sync::Arc, time::Duration};
 
 use args::Args;
 use clap::Parser;
-use std::sync::atomic::{AtomicU64, Ordering};
+use std::sync::atomic::AtomicU64;
 use tokio::sync::broadcast;
 use url::Url;
 
