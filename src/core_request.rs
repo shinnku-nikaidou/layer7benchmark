@@ -1,34 +1,10 @@
-use std::{cell::Cell, sync::atomic::Ordering};
+use std::sync::atomic::Ordering;
 
 use anyhow::Result;
 use reqwest::{Client, Request};
 use tokio::sync::watch;
 
 use crate::COUNTER;
-
-#[derive(Default)]
-struct ThreadCounter {
-    counter: Cell<u64>,
-}
-
-impl ThreadCounter {
-    fn inc(&self) {
-        // TODO: re-design publish strategy
-        // self.counter.update(|c| c + 1);
-
-        let current = self.counter.get();
-        self.counter.set(current + 1);
-
-        if (current + 1) % 100 == 0 {
-            self.publish();
-        }
-    }
-
-    fn publish(&self) {
-        let value = self.counter.replace(0);
-        COUNTER.fetch_add(value, Ordering::AcqRel);
-    }
-}
 
 pub struct FullRequest {
     client: Client,
@@ -47,10 +23,6 @@ impl FullRequest {
 }
 
 pub async fn send_requests(mut req: FullRequest) -> Result<()> {
-    thread_local! {
-        static LOCAL_COUNTER: ThreadCounter = ThreadCounter::default();
-    }
-
     loop {
         let request = req
             .req
@@ -67,7 +39,7 @@ pub async fn send_requests(mut req: FullRequest) -> Result<()> {
                     continue;
                 }
 
-                LOCAL_COUNTER.with(|c| c.inc());
+                COUNTER.fetch_add(1, Ordering::AcqRel);
             }
 
             _ = req.shutdown.changed() => {

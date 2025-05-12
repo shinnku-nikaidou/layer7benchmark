@@ -33,7 +33,7 @@ pub struct Args {
     #[arg(short, long, default_value_t = 60)]
     pub time: u64,
 
-    /// ip to send the request to (default is automatically resolved from the url)
+    /// ip to send the request to [default is automatically resolved from the url]
     #[arg(short, long)]
     pub ip: Option<IpAddr>,
 
