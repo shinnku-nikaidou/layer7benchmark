@@ -89,7 +89,9 @@ pub async fn build_client(
             .parse::<SocketAddr>()?
     };
 
-    let mut client = Client::builder().resolve(domain, client_ip_addr);
+    let mut client = Client::builder()
+        .resolve(domain, client_ip_addr)
+        .use_native_tls();
 
     if let Some(user_agent) = &special_headers.user_agent {
         client = client.user_agent(user_agent);

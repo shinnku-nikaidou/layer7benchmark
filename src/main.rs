@@ -8,7 +8,6 @@ use std::{sync::Arc, time::Duration};
 
 use args::Args;
 use clap::Parser;
-use reqwest::Client;
 use std::sync::atomic::AtomicU64;
 use tokio::sync::broadcast;
 use url::Url;
