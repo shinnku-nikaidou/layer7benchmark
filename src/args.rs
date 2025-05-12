@@ -1,9 +1,10 @@
-use clap::{Parser, ArgAction};
+use clap::Parser;
 
 #[derive(Parser, Debug)]
+#[command(version)]
 pub struct Args {
     #[arg(short = 'c', long = "concurrent-count", default_value_t = 2)]
-    pub concurrent_count: u8,
+    pub concurrent_count: u16,
 
     #[arg(short = 'u', long = "url", default_value = "https://www.google.com")]
     pub url: String,
@@ -13,12 +14,6 @@ pub struct Args {
 
     #[arg(short='i',long="ip", default_value = "")]
     pub ip: String,
-
-    #[arg(short = 'h', long = "help", action = ArgAction::Help)]
-    pub help: bool,
-
-    #[arg(short = 'v', long = "version", action = ArgAction::Version)]
-    pub version: bool,
 
     #[arg(long = "header", default_value = "")]
     pub header: String,
