@@ -15,19 +15,21 @@
     help for layer7benchmark
 -v or --version
     version for layer7benchmark
---header string
-    http header to send
+-H or --header string
+    http header to send (-H is exactly the same as curl command in order to be compatible with it)
 -i or --ip string
     ip to send the request to (default is automatically resolved from the url)
 --test
-    test mode, only send one request for testing Debugging the answer
--m or --method string
-    http method to use (default is GET) options: GET or POST or PUT or DELETE or OPTIONS
+    test mode, only send one request for testing or debugging the answer
+-X or --method string
+    http method to use (default is GET) options: GET or POST or PUT or DELETE or OPTIONS (also -X is still exactly the same as curl command)
 ```
 
 ### Example
 
 ```bash
+./layer7benchmark -u https://www.example.com --test
+
 ./layer7benchmark -u https://www.example.com -t 60 \
     --header "User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/58.0.3029.110 Safari/537.3" \
     --header "Accept: text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8" \

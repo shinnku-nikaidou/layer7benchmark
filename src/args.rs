@@ -21,7 +21,7 @@ pub struct Args {
     #[arg(long = "body", default_value = "")]
     pub body: String,
 
-    #[arg(long = "method", default_value = "GET")]
+    #[arg(short = 'X', long = "method", default_value = "GET")]
     pub method: String,
 
     #[arg(long = "test", default_value_t = false)]

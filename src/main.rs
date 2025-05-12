@@ -47,7 +47,7 @@ async fn main() -> anyhow::Result<()> {
     if args.test {
         println!("Test mode enabled. Only send one single request.");
         let request_builder = client.request(method.parse().unwrap(), &url);
-        let response = request_builder.send().await?;
+        let response = request_builder.headers(headers).send().await?;
         println!("Response status: {:?}", response.status());
         println!("Response is: {:?}", response.text().await?);
         return Ok(());
