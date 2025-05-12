@@ -1,77 +1,73 @@
 mod args;
 mod build_client;
 mod core_request;
-mod parse_header;
 mod terminal;
-use core::panic;
-use std::{sync::Arc, time::Duration};
+
+use std::{sync::atomic::AtomicU64, time::Duration};
+
+use anyhow::Result;
+use clap::Parser;
+use tokio::{runtime::Runtime, sync::watch};
 
 use args::Args;
-use clap::Parser;
-use std::sync::atomic::AtomicU64;
-use tokio::sync::broadcast;
-use url::Url;
+use build_client::build_client;
+use core_request::{send_requests, FullRequest};
+use terminal::terminal_output;
 
-#[tokio::main]
-async fn main() -> anyhow::Result<()> {
-    let args = Args::parse();
-    let mut handles = Vec::new();
-    let url = args.url.clone();
-    let method = args.method;
-    let parsed_url = Url::parse(&args.url)?;
-    let request_counter = Arc::new(AtomicU64::new(0));
+static COUNTER: AtomicU64 = AtomicU64::new(0);
 
-    if method != "GET" && method != "POST" && method != "PUT" && method != "DELETE" {
-        panic!("Method must be GET or POST or PUT or DELETE");
-    } else {
-        println!("Method is: {}", method);
-    }
+async fn run(args: Args) -> Result<()> {
+    let client = build_client(&args.url, args.ip).await?;
 
-    println!("Headers is: {:?}", args.header);
+    let (shutdown_tx, shutdown_rx) = watch::channel(false);
 
-    let mut have_header = false;
-    let headers = if args.header.len() > 0 {
-        have_header = true;
-        parse_header::parse_header(args.header)?
-    } else {
-        reqwest::header::HeaderMap::new()
-    };
+    let headers = args.header.into_iter().collect();
 
-    let client = build_client::build_client(&parsed_url, &args.ip).await?;
-    let (shutdown_tx, _) = broadcast::channel(1);
+    let request = client
+        .request(args.method.clone(), args.url)
+        .headers(headers)
+        .build()?;
 
-    for _ in 0..args.concurrent_count {
-        let full_request = core_request::FullRequest {
-            url: url.clone(),
-            client: client.clone(),
-            headers: headers.clone(),
-            method: method.clone(),
-            has_header: have_header,
-        };
-        let shutdown_rx = shutdown_tx.subscribe();
-        let counter_clone = Arc::clone(&request_counter);
+    let handles: Vec<_> = (0..args.concurrent_count)
+        .map(|_| {
+            let full_request = FullRequest::new(
+                client.clone(),
+                request
+                    .try_clone()
+                    .expect("The request can not be cloned, maybe the body is a stream"),
+                shutdown_rx.clone(),
+            );
 
-        let handle = tokio::spawn(core_request::send_requests(
-            full_request,
-            shutdown_rx,
-            counter_clone,
-        ));
-        handles.push(handle);
-    }
+            tokio::spawn(send_requests(full_request))
+        })
+        .collect();
 
-    let _terminal_handle = tokio::spawn(terminal::terminal_output(
-        Arc::clone(&request_counter),
-        method.clone(),
-    ));
+    let terminal_handle = tokio::spawn(terminal_output(args.method, shutdown_rx));
 
     tokio::time::sleep(Duration::from_secs(args.time)).await;
-    let _ = shutdown_tx.send(());
+
+    shutdown_tx.send(true)?;
+
+    terminal_handle.await??;
 
     for handle in handles {
-        if let Err(e) = handle.await {
-            eprintln!("Task exited with error: {:?}", e);
-        }
+        handle.await??;
     }
 
     Ok(())
+}
+
+fn main() {
+    let args = Args::parse();
+
+    println!("Method is: {}", args.method);
+    println!("Headers are: {:?}", args.header);
+
+    let runtime = Runtime::new().expect("Could not build the tokio runtime");
+
+    if let Err(error) = runtime.block_on(run(args)) {
+        eprintln!("Exited with error: {error}");
+    } else {
+        println!("Finished.");
+    }
 }

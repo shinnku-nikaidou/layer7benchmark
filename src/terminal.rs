@@ -1,33 +1,50 @@
+use std::{
+    io::{stdout, Write},
+    sync::atomic::Ordering,
+    time::Duration,
+};
+
+use anyhow::Result;
 use crossterm::{
     cursor::{MoveTo, MoveUp},
     terminal::{Clear, ClearType},
     ExecutableCommand,
 };
-use std::{
-    io::{stdout, Write},
-    sync::{
-        atomic::{AtomicU64, Ordering},
-        Arc,
-    },
-    time::Duration,
-};
+use http::Method;
+use tokio::sync::watch;
 
-pub async fn terminal_output(counter: Arc<AtomicU64>, method: String) -> anyhow::Result<()> {
+use crate::COUNTER;
+
+pub async fn terminal_output(method: Method, mut shutdown: watch::Receiver<bool>) -> Result<()> {
     tokio::time::sleep(Duration::from_secs(6)).await;
+
     let mut stdout = stdout();
+
     loop {
         stdout
             .execute(MoveUp(2))?
             .execute(MoveTo(0, 0))?
             .execute(Clear(ClearType::CurrentLine))?;
+
         write!(
             stdout,
             "The {method} request has sent {} times",
-            counter.load(Ordering::Relaxed)
+            COUNTER.load(Ordering::Acquire)
         )?;
 
         stdout.flush()?;
 
-        tokio::time::sleep(Duration::from_millis(200)).await;
+        tokio::select! {
+            _ = tokio::time::sleep(Duration::from_millis(200)) => { }
+            _ = shutdown.changed() => {
+                let shutdown = shutdown.borrow_and_update();
+
+                if *shutdown {
+                    break;
+                }
+            }
+        }
     }
+
+    Ok(())
 }
