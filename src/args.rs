@@ -23,4 +23,7 @@ pub struct Args {
 
     #[arg(long = "method", default_value = "GET")]
     pub method: String,
+
+    #[arg(long = "test", default_value_t = false)]
+    pub test: bool,
 }

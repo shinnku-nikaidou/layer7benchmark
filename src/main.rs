@@ -21,13 +21,16 @@ async fn main() -> anyhow::Result<()> {
     let parsed_url = Url::parse(&args.url)?;
     let request_counter = Arc::new(AtomicU64::new(0));
 
-    if method != "GET" && method != "POST" && method != "PUT" && method != "DELETE" {
-        panic!("Method must be GET or POST or PUT or DELETE");
+    if method != "GET"
+        && method != "POST"
+        && method != "PUT"
+        && method != "DELETE"
+        && method != "OPTIONS"
+    {
+        panic!("Method must be GET or POST or PUT or DELETE or OPTIONS");
     } else {
         println!("Method is: {}", method);
     }
-
-    println!("Headers is: {:?}", args.header);
 
     let mut have_header = false;
     let headers = if args.header.len() > 0 {
@@ -37,7 +40,19 @@ async fn main() -> anyhow::Result<()> {
         reqwest::header::HeaderMap::new()
     };
 
+    println!("Headers is: {:?}", headers);
+
     let client = build_client::build_client(&parsed_url, &args.ip).await?;
+
+    if args.test {
+        println!("Test mode enabled. Only send one single request.");
+        let request_builder = client.request(method.parse().unwrap(), &url);
+        let response = request_builder.send().await?;
+        println!("Response status: {:?}", response.status());
+        println!("Response is: {:?}", response.text().await?);
+        return Ok(());
+    }
+
     let (shutdown_tx, _) = broadcast::channel(1);
 
     for _ in 0..args.concurrent_count {

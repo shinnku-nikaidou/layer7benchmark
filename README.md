@@ -19,6 +19,10 @@
     http header to send
 -i or --ip string
     ip to send the request to (default is automatically resolved from the url)
+--test
+    test mode, only send one request for testing Debugging the answer
+-m or --method string
+    http method to use (default is GET) options: GET or POST or PUT or DELETE or OPTIONS
 ```
 
 ### Example
