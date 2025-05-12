@@ -10,7 +10,16 @@ authors = ["shinnku nikaidou <nikaidou@shinnku.com>"]
 anyhow = "1.0.98"
 clap = { version = "4.5.38", features = ["derive"] }
 rand = "0.9.1"
-reqwest = { version = "0.12.15", features = ["json"] }
+reqwest = { version = "0.12.15", features = [
+    "json",
+    "deflate",
+    "gzip",
+    "stream",
+    "socks",
+    "native-tls",
+    "blocking",
+    "cookies",
+] }
 tokio = { version = "1.45.0", features = ["full"] }
 url = "2.5.4"
 hyper = { version = "1.6", features = ["full"] }

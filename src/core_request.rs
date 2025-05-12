@@ -7,7 +7,6 @@ pub struct FullRequest {
     pub client: reqwest::Client,
     pub headers: reqwest::header::HeaderMap,
     pub method: String,
-    pub has_header: bool,
 }
 
 pub async fn send_requests(
@@ -16,10 +15,11 @@ pub async fn send_requests(
     counter: Arc<AtomicU64>,
 ) {
     loop {
-        let mut request_builder = fr.client.request(fr.method.parse().unwrap(), &fr.url);
-        if fr.has_header {
-            request_builder = request_builder.headers(fr.headers.clone());
-        }
+        let request_builder = fr
+            .client
+            .request(fr.method.parse().unwrap(), &fr.url)
+            .headers(fr.headers.clone());
+
         tokio::select! {
             biased;
             _ = shutdown_rx.recv() => {

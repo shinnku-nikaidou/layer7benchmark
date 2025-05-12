@@ -8,6 +8,7 @@ use std::{sync::Arc, time::Duration};
 
 use args::Args;
 use clap::Parser;
+use reqwest::Client;
 use std::sync::atomic::AtomicU64;
 use tokio::sync::broadcast;
 use url::Url;
@@ -32,17 +33,15 @@ async fn main() -> anyhow::Result<()> {
         println!("Method is: {}", method);
     }
 
-    let mut have_header = false;
-    let headers = if args.header.len() > 0 {
-        have_header = true;
-        parse_header::parse_header(args.header)?
-    } else {
-        reqwest::header::HeaderMap::new()
-    };
+    let (headers, special_headers) = build_client::parse_header(args.header.clone())?;
 
     println!("Headers is: {:?}", headers);
+    println!("enabled gzip: {:?}", special_headers.gzip);
+    println!("enabled deflate: {:?}", special_headers.deflate);
+    println!("cookie is: {:?}", special_headers.cookie);
+    println!("user agent is: {:?}", special_headers.user_agent);
 
-    let client = build_client::build_client(&parsed_url, &args.ip).await?;
+    let client = build_client::build_client(&parsed_url, &args.ip, &special_headers).await?;
 
     if args.test {
         println!("Test mode enabled. Only send one single request.");
@@ -61,7 +60,6 @@ async fn main() -> anyhow::Result<()> {
             client: client.clone(),
             headers: headers.clone(),
             method: method.clone(),
-            has_header: have_header,
         };
         let shutdown_rx = shutdown_tx.subscribe();
         let counter_clone = Arc::clone(&request_counter);
