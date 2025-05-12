@@ -7,7 +7,7 @@ use url::Url;
 
 fn parse_header(s: &str) -> Result<(HeaderName, HeaderValue)> {
     let parts: Vec<_> = s.split(':').collect();
-    
+
     if parts.len() != 2 {
         bail!("Invalid header format: {s}");
     }

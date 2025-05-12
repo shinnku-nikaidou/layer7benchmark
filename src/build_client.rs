@@ -10,7 +10,7 @@ pub async fn build_client(url: &Url, ip: Option<IpAddr>) -> Result<Client> {
         .host_str()
         .ok_or(anyhow!("The URL does not have a host"))?;
 
-    let client_ip_addr = match ip {
+    let ip = match ip {
         Some(ip) => ip,
         None => {
             let resolver = Resolver::builder_tokio()?.build();
@@ -24,7 +24,9 @@ pub async fn build_client(url: &Url, ip: Option<IpAddr>) -> Result<Client> {
         }
     };
 
+    let port = url.port_or_known_default().unwrap_or(0);
+
     Ok(Client::builder()
-        .resolve(domain, SocketAddr::new(client_ip_addr, 0))
+        .resolve(domain, SocketAddr::new(ip, port))
         .build()?)
 }
