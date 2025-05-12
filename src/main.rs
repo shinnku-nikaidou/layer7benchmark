@@ -59,6 +59,11 @@ async fn main() -> anyhow::Result<()> {
         handles.push(handle);
     }
 
+    let _terminal_handle = tokio::spawn(terminal::terminal_output(
+        Arc::clone(&request_counter),
+        method.clone(),
+    ));
+
     tokio::time::sleep(Duration::from_secs(args.time)).await;
     let _ = shutdown_tx.send(());
 

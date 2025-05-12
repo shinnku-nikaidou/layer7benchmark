@@ -1,5 +1,5 @@
 use std::sync::atomic::{AtomicU64, Ordering};
-use std::{sync::Arc, time::Duration};
+use std::sync::Arc;
 use tokio::sync::broadcast;
 
 pub struct FullRequest {
@@ -11,16 +11,14 @@ pub struct FullRequest {
 }
 
 pub async fn send_requests(
-    full_request: FullRequest,
+    fr: FullRequest,
     mut shutdown_rx: broadcast::Receiver<()>,
     counter: Arc<AtomicU64>,
 ) {
     loop {
-        let mut request_builder = full_request
-            .client
-            .request(full_request.method.parse().unwrap(), &full_request.url);
-        if full_request.has_header {
-            request_builder = request_builder.headers(full_request.headers.clone());
+        let mut request_builder = fr.client.request(fr.method.parse().unwrap(), &fr.url);
+        if fr.has_header {
+            request_builder = request_builder.headers(fr.headers.clone());
         }
         tokio::select! {
             biased;
