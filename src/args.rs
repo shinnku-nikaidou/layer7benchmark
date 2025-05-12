@@ -1,4 +1,4 @@
-use clap::Parser;
+use clap::{Parser, ArgAction};
 
 #[derive(Parser, Debug)]
 pub struct Args {
@@ -13,4 +13,13 @@ pub struct Args {
 
     #[arg(short='i',long="ip", default_value = "")]
     pub ip: String,
+
+    #[arg(short = 'h', long = "help", action = ArgAction::Help)]
+    pub help: bool,
+
+    #[arg(short = 'v', long = "version", action = ArgAction::Version)]
+    pub version: bool,
+
+    #[arg(long = "header", default_value = "")]
+    pub header: String,
 }
