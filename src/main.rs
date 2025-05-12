@@ -10,10 +10,7 @@ use std::{sync::Arc, time::Duration};
 use args::Args;
 use clap::Parser;
 use std::sync::atomic::AtomicU64;
-use tokio::{
-    runtime::Runtime,
-    sync::{broadcast, watch},
-};
+use tokio::{runtime::Runtime, sync::watch};
 use url::Url;
 
 async fn run(args: Args) -> Result<()> {
@@ -34,7 +31,7 @@ async fn run(args: Args) -> Result<()> {
         println!("Method is: {}", method);
     }
 
-    let (headers, special_headers) = build_client::parse_header(args.header.clone())?;
+    let (headers, special_headers) = parse_header::parse_header(args.header.clone())?;
 
     println!("Headers is: {:?}", headers);
     println!("enabled gzip: {:?}", special_headers.gzip);

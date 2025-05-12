@@ -13,7 +13,7 @@ use std::{
 };
 
 pub async fn terminal_output(counter: Arc<AtomicU64>, method: String) -> anyhow::Result<()> {
-    tokio::time::sleep(Duration::from_secs(6)).await;
+    tokio::time::sleep(Duration::from_secs(4)).await;
     let mut stdout = stdout();
     loop {
         stdout

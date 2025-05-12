@@ -1,3 +1,5 @@
+use std::net::IpAddr;
+
 use clap::Parser;
 
 #[derive(Parser, Debug)]
@@ -12,8 +14,8 @@ pub struct Args {
     #[arg(short = 't', long = "time", default_value_t = 60)]
     pub time: u64,
 
-    #[arg(short = 'i', long = "ip", default_value = "")]
-    pub ip: String,
+    #[arg(short, long)]
+    pub ip: Option<IpAddr>,
 
     #[arg(short = 'H', long = "header", default_values_t = Vec::<String>::new())]
     pub header: Vec<String>,
