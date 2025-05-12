@@ -15,6 +15,12 @@ pub struct Args {
     #[arg(short='i',long="ip", default_value = "")]
     pub ip: String,
 
-    #[arg(long = "header", default_value = "")]
-    pub header: String,
+    #[arg(long = "header", default_values_t = Vec::<String>::new())]
+    pub header: Vec::<String>,
+
+    #[arg(long = "body", default_value = "")]
+    pub body: String,
+
+    #[arg(long = "method", default_value = "GET")]
+    pub method: String,
 }

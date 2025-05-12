@@ -1,5 +1,6 @@
 mod args;
 mod build_client;
+mod parse_header;
 use core::panic;
 use std::time::Duration;
 
@@ -13,7 +14,24 @@ async fn main() -> anyhow::Result<()> {
     let args = Args::parse();
     let mut handles = Vec::new();
     let url = args.url.clone();
+    let method = args.method;
     let parsed_url = Url::parse(&args.url)?;
+
+    if method != "GET" && method != "POST" && method != "PUT" && method != "DELETE" {
+        panic!("Method must be GET or POST or PUT or DELETE");
+    } else {
+        println!("Method is: {}", method);
+    }
+
+    println!("Headers is: {:?}", args.header);
+
+    let mut have_header = false;
+    let headers = if args.header.len() > 0 {
+        have_header = true;
+        parse_header::parse_header(args.header)?
+    } else {
+        reqwest::header::HeaderMap::new()
+    };
 
     let client = build_client::build_client(&parsed_url, &args.ip).await?;
     let (shutdown_tx, _) = broadcast::channel(1);
@@ -22,15 +40,21 @@ async fn main() -> anyhow::Result<()> {
         let url = url.clone();
         let client = client.clone();
         let mut shutdown_rx = shutdown_tx.subscribe();
+        let method = method.clone();
+        let headers = headers.clone();
 
         let handle = tokio::spawn(async move {
             loop {
+                let mut request_builder = client.request(method.parse().unwrap(), &url);
+                if have_header {
+                    request_builder = request_builder.headers(headers.clone());
+                }
                 tokio::select! {
                     biased;
                     _ = shutdown_rx.recv() => {
                         break;
                     }
-                    result = client.get(&url).send() => {
+                    result = request_builder.send() => {
                         if let Ok(resp) = result {
                             let _ = resp.bytes().await;
                         }

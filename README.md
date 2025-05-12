@@ -21,6 +21,20 @@
     ip to send the request to (default is automatically resolved from the url)
 ```
 
+### Example
+
+```bash
+./layer7benchmark -u https://www.example.com -t 60 \
+    --header "User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/58.0.3029.110 Safari/537.3" \
+    --header "Accept: text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8" \
+    --header "Accept-Language: en-US,en;q=0.5" \
+    --header "Accept-Encoding: gzip, deflate, br" \
+    --header "Connection: keep-alive" \
+    --header "Cache-Control: max-age=0"
+
+./layer7benchmark -u https://x.com/home -c 16 -t 360 --ip 172.66.0.227
+```
+
 ## Introduction
 
 Layer7Benchmark is a tool to benchmark the performance of Layer 7 (application layer) protocols, such as HTTP and HTTPS. It allows you to test the response time and throughput of your web applications under different load conditions.
