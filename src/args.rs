@@ -15,7 +15,7 @@ pub struct Args {
     #[arg(short = 'i', long = "ip", default_value = "")]
     pub ip: String,
 
-    #[arg(long = "header", default_values_t = Vec::<String>::new())]
+    #[arg(short = 'H', long = "header", default_values_t = Vec::<String>::new())]
     pub header: Vec<String>,
 
     #[arg(long = "body", default_value = "")]
