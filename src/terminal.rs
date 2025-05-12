@@ -9,7 +9,6 @@ use std::{
         atomic::{AtomicU64, Ordering},
         Arc,
     },
-    thread,
     time::Duration,
 };
 

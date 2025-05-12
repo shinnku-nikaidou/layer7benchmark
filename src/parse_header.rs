@@ -1,5 +1,4 @@
-use reqwest::header::{HeaderMap, HeaderValue, HeaderName};
-
+use reqwest::header::{HeaderMap, HeaderName, HeaderValue};
 
 pub fn parse_header(header: Vec<String>) -> anyhow::Result<HeaderMap> {
     let mut parsed_headers = HeaderMap::new();

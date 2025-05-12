@@ -12,11 +12,11 @@ pub struct Args {
     #[arg(short = 't', long = "time", default_value_t = 60)]
     pub time: u64,
 
-    #[arg(short='i',long="ip", default_value = "")]
+    #[arg(short = 'i', long = "ip", default_value = "")]
     pub ip: String,
 
     #[arg(long = "header", default_values_t = Vec::<String>::new())]
-    pub header: Vec::<String>,
+    pub header: Vec<String>,
 
     #[arg(long = "body", default_value = "")]
     pub body: String,
