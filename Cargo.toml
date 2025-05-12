@@ -27,3 +27,5 @@ url = "2.5.4"
 hyper = { version = "1.6", features = ["full"] }
 crossterm = { version = "0.29.0" }
 native-tls = "0.2.14"
+log = "0.4.27"
+env_logger = "0.11.8"

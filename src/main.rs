@@ -3,8 +3,8 @@ mod build_client;
 mod core_request;
 mod parse_header;
 mod terminal;
-use anyhow::Result;
-use core::panic;
+use anyhow::{Context, Result};
+use log::{error, info};
 use std::{sync::Arc, time::Duration};
 
 use args::Args;
@@ -17,36 +17,37 @@ async fn run(args: Args) -> Result<()> {
     let mut handles = Vec::new();
     let url = args.url.clone();
     let method = args.method;
-    let parsed_url = Url::parse(&args.url)?;
+    let parsed_url = Url::parse(&args.url).context("Failed to parse URL")?;
     let request_counter = Arc::new(AtomicU64::new(0));
 
-    if method != "GET"
-        && method != "POST"
-        && method != "PUT"
-        && method != "DELETE"
-        && method != "OPTIONS"
-    {
-        panic!("Method must be GET or POST or PUT or DELETE or OPTIONS");
-    } else {
-        println!("Method is: {}", method);
+    match method.as_str() {
+        "GET" | "POST" | "PUT" | "DELETE" | "OPTIONS" => {
+            info!("Method is: {}", method);
+        }
+        _ => {
+            return Err(anyhow::anyhow!(
+                "Method must be GET, POST, PUT, DELETE, or OPTIONS"
+            ));
+        }
     }
 
     let (headers, special_headers) = parse_header::parse_header(args.header.clone())?;
 
-    println!("Headers is: {:?}", headers);
-    println!("enabled gzip: {:?}", special_headers.gzip);
-    println!("enabled deflate: {:?}", special_headers.deflate);
-    println!("cookie is: {:?}", special_headers.cookie);
-    println!("user agent is: {:?}", special_headers.user_agent);
+    info!("Headers is: {:?}", headers);
+    info!("enabled gzip: {:?}", special_headers.gzip);
+    info!("enabled deflate: {:?}", special_headers.deflate);
+    info!("cookie is: {:?}", special_headers.cookie);
+    info!("user agent is: {:?}", special_headers.user_agent);
 
     let client = build_client::build_client(&parsed_url, &args.ip, &special_headers).await?;
 
     if args.test {
-        println!("Test mode enabled. Only send one single request.");
-        let request_builder = client.request(method.parse().unwrap(), &url);
+        info!("Test mode enabled. Only send one single request.");
+        let request_builder =
+            client.request(method.parse().context("Failed to parse HTTP method")?, &url);
         let response = request_builder.headers(headers).send().await?;
-        println!("Response status: {:?}", response.status());
-        println!("Response is: {:?}", response.text().await?);
+        info!("Response status: {:?}", response.status());
+        info!("Response is: {:?}", response.text().await?);
         return Ok(());
     }
 
@@ -76,7 +77,7 @@ async fn run(args: Args) -> Result<()> {
 
     for handle in handles {
         if let Err(e) = handle.await {
-            eprintln!("Task exited with error: {:?}", e);
+            error!("Task exited with error: {:?}", e);
         }
     }
 
@@ -85,11 +86,16 @@ async fn run(args: Args) -> Result<()> {
 
 fn main() {
     let args = Args::parse();
+    if std::env::var_os("RUST_LOG").is_none() {
+        std::env::set_var("RUST_LOG", "info");
+    }
+    env_logger::init();
+    info!("l7_httpflood started");
     let runtime = Runtime::new().expect("Could not build the tokio runtime");
 
     if let Err(error) = runtime.block_on(run(args)) {
-        eprintln!("Exited with error: {error}");
+        error!("Exited with error: {}", error);
     } else {
-        println!("Finished.");
+        info!("Finished.");
     }
 }
