@@ -1,6 +1,6 @@
 [package]
 name = "layer7benchmark"
-version = "0.2.0"
+version = "0.3.0"
 edition = "2021"
 description = "A simple benchmark tool for Layer 7 (HTTP) load testing"
 license = "MIT"
@@ -14,3 +14,4 @@ reqwest = { version = "0.12.15", features = ["json"] }
 tokio = { version = "1.45.0", features = ["full"] }
 url = "2.5.4"
 openssl = { version = "0.10", features = ["vendored"] }
+hyper = { version = "1.6", features = ["full"] }
