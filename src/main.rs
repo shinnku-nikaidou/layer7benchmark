@@ -3,18 +3,17 @@ mod build_client;
 mod core_request;
 mod parse_header;
 mod terminal;
+use anyhow::Result;
 use core::panic;
 use std::{sync::Arc, time::Duration};
 
 use args::Args;
 use clap::Parser;
 use std::sync::atomic::AtomicU64;
-use tokio::sync::broadcast;
+use tokio::{runtime::Runtime, sync::broadcast};
 use url::Url;
 
-#[tokio::main]
-async fn main() -> anyhow::Result<()> {
-    let args = Args::parse();
+async fn run(args: Args) -> Result<()> {
     let mut handles = Vec::new();
     let url = args.url.clone();
     let method = args.method;
@@ -86,4 +85,19 @@ async fn main() -> anyhow::Result<()> {
     }
 
     Ok(())
+}
+
+fn main() {
+    let args = Args::parse();
+
+    println!("Method is: {}", args.method);
+    println!("Headers are: {:?}", args.header);
+
+    let runtime = Runtime::new().expect("Could not build the tokio runtime");
+
+    if let Err(error) = runtime.block_on(run(args)) {
+        eprintln!("Exited with error: {error}");
+    } else {
+        println!("Finished.");
+    }
 }
