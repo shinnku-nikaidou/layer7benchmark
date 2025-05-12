@@ -1,11 +1,14 @@
 mod args;
 mod build_client;
+mod core_request;
 mod parse_header;
+mod terminal;
 use core::panic;
-use std::time::Duration;
+use std::{sync::Arc, time::Duration};
 
 use args::Args;
 use clap::Parser;
+use std::sync::atomic::{AtomicU64, Ordering};
 use tokio::sync::broadcast;
 use url::Url;
 
@@ -16,6 +19,7 @@ async fn main() -> anyhow::Result<()> {
     let url = args.url.clone();
     let method = args.method;
     let parsed_url = Url::parse(&args.url)?;
+    let request_counter = Arc::new(AtomicU64::new(0));
 
     if method != "GET" && method != "POST" && method != "PUT" && method != "DELETE" {
         panic!("Method must be GET or POST or PUT or DELETE");
@@ -37,32 +41,21 @@ async fn main() -> anyhow::Result<()> {
     let (shutdown_tx, _) = broadcast::channel(1);
 
     for _ in 0..args.concurrent_count {
-        let url = url.clone();
-        let client = client.clone();
-        let mut shutdown_rx = shutdown_tx.subscribe();
-        let method = method.clone();
-        let headers = headers.clone();
+        let full_request = core_request::FullRequest {
+            url: url.clone(),
+            client: client.clone(),
+            headers: headers.clone(),
+            method: method.clone(),
+            has_header: have_header,
+        };
+        let shutdown_rx = shutdown_tx.subscribe();
+        let counter_clone = Arc::clone(&request_counter);
 
-        let handle = tokio::spawn(async move {
-            loop {
-                let mut request_builder = client.request(method.parse().unwrap(), &url);
-                if have_header {
-                    request_builder = request_builder.headers(headers.clone());
-                }
-                tokio::select! {
-                    biased;
-                    _ = shutdown_rx.recv() => {
-                        break;
-                    }
-                    result = request_builder.send() => {
-                        if let Ok(resp) = result {
-                            let _ = resp.bytes().await;
-                        }
-                        tokio::task::yield_now().await;
-                    }
-                }
-            }
-        });
+        let handle = tokio::spawn(core_request::send_requests(
+            full_request,
+            shutdown_rx,
+            counter_clone,
+        ));
         handles.push(handle);
     }
 
