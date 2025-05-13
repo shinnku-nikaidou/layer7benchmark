@@ -15,10 +15,10 @@ pub struct FullRequest {
 }
 
 pub async fn send_requests(req: FullRequest, mut shutdown: watch::Receiver<bool>) {
-    let s = STATISTIC.get().unwrap().clone();
-    let counter = &s.request_counter.clone();
-    let sc = &s.status_counter.clone();
-    let network_traffics = &s.network_traffics.clone();
+    let s = STATISTIC.get().unwrap();
+    let counter = &s.request_counter;
+    let sc = &s.status_counter;
+    let network_traffics = &s.network_traffics;
 
     loop {
         let request_builder = req

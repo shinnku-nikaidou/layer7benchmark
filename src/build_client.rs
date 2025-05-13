@@ -1,4 +1,3 @@
-use anyhow::{Context, Result};
 use log::info;
 use reqwest::{cookie::Jar, Client};
 use std::net::{IpAddr, SocketAddr};
@@ -8,14 +7,29 @@ use url::Url;
 
 use crate::parse_header::HeadersConfig;
 
+#[derive(thiserror::Error, Debug)]
+pub enum ClientBuildError {
+    #[error("URL is missing host component")]
+    URLMissingHost,
+    
+    #[error("Failed to build HTTP client: \n{0}")]
+    ReqwestError(#[from] reqwest::Error),
+    
+    #[error("Failed to resolve IP address for domain {0}")]
+    DNSLookupFailed(String),
+    
+    #[error("No IP addresses found for domain {0}")]
+    NoIpAddressesFound(String),
+}
+
 pub async fn build_client(
     parsed_url: &Url,
     ip: &Option<IpAddr>,
     headers_config: &HeadersConfig
-) -> Result<Client> {
+) -> Result<Client, ClientBuildError> {
     let domain = parsed_url
         .host_str()
-        .context("URL is missing host component")?;
+        .ok_or(ClientBuildError::URLMissingHost)?;
     info!("Domain: {}", domain);
 
     let socket_addr = resolve_socket_addr(parsed_url, ip, domain).await?;
@@ -40,16 +54,14 @@ pub async fn build_client(
         client_builder
     };
 
-    client_builder
-        .build()
-        .context("Failed to build HTTP client")
+    Ok(client_builder.build()?)
 }
 
 async fn resolve_socket_addr(
     parsed_url: &Url,
     ip: &Option<IpAddr>,
     domain: &str,
-) -> Result<SocketAddr> {
+) -> Result<SocketAddr, ClientBuildError> {
     let port = parsed_url.port_or_known_default().unwrap_or(0);
 
     match ip {
@@ -60,9 +72,9 @@ async fn resolve_socket_addr(
         None => {
             let socket_addr = lookup_host((domain, 0))
                 .await
-                .context("DNS lookup failed")?
+                .map_err(|e| ClientBuildError::DNSLookupFailed(e.to_string()))?
                 .next()
-                .context("No IP addresses found for domain")?;
+                .ok_or(ClientBuildError::NoIpAddressesFound(domain.to_string()))?;
 
             info!("Resolved domain '{}' to IP: {}", domain, socket_addr.ip());
             Ok(SocketAddr::new(socket_addr.ip(), port))

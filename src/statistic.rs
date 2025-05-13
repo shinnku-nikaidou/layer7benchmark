@@ -1,20 +1,20 @@
-use std::sync::{atomic::AtomicU64, Arc};
+use std::sync::{atomic::AtomicU64};
 use tokio::sync::OnceCell;
 
-#[derive(Default, Clone)]
+#[derive(Default)]
 pub struct Statistic {
-    pub request_counter: Arc<AtomicU64>,
+    pub request_counter: AtomicU64,
     pub status_counter: StatusCounter,
-    pub network_traffics: Arc<AtomicU64>,
+    pub network_traffics: AtomicU64,
 }
 
-#[derive(Default, Clone)]
+#[derive(Default)]
 pub struct StatusCounter {
-    pub status_2xx: Arc<AtomicU64>,
-    pub status_3xx: Arc<AtomicU64>,
-    pub status_4xx: Arc<AtomicU64>,
-    pub status_5xx: Arc<AtomicU64>,
-    pub status_other: Arc<AtomicU64>,
+    pub status_2xx: AtomicU64,
+    pub status_3xx: AtomicU64,
+    pub status_4xx: AtomicU64,
+    pub status_5xx: AtomicU64,
+    pub status_other: AtomicU64,
 }
 
 pub static STATISTIC: OnceCell<Statistic> = OnceCell::const_new();

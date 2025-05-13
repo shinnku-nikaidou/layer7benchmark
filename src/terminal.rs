@@ -13,10 +13,10 @@ use std::{
 use crate::statistic::STATISTIC;
 
 pub async fn terminal_output(method: reqwest::Method) -> anyhow::Result<()> {
-    let s = STATISTIC.get().unwrap().clone();
-    let counter = &s.request_counter.clone();
-    let sc = &s.status_counter.clone();
-    let network_traffics = &s.network_traffics.clone();
+    let s = STATISTIC.get().unwrap();
+    let counter = &s.request_counter;
+    let sc = &s.status_counter;
+    let network_traffics = &s.network_traffics;
 
     tokio::time::sleep(Duration::from_secs(4)).await;
     let mut stdout = stdout();
