@@ -64,7 +64,7 @@ async fn run(args: Args) -> Result<()> {
         handles.spawn(handle);
     }
 
-    tokio::spawn(terminal::terminal_output(method.clone()));
+    tokio::spawn(terminal::terminal_output(method.clone(), shutdown_rx.clone()));
 
     tokio::time::sleep(Duration::from_secs(time)).await;
     let _ = shutdown_tx.send(true);
