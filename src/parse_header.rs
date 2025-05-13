@@ -1,6 +1,6 @@
-use std::str::FromStr;
 use log::info;
 use reqwest::header::{HeaderMap, HeaderName, HeaderValue};
+use std::str::FromStr;
 
 #[derive(Debug, Clone)]
 pub struct HeadersConfig {
@@ -10,7 +10,6 @@ pub struct HeadersConfig {
     pub cookie: Option<String>,
     pub other_headers: HeaderMap,
 }
-
 
 impl HeadersConfig {
     pub fn log_detail(&self) {

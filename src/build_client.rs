@@ -11,13 +11,13 @@ use crate::parse_header::HeadersConfig;
 pub enum ClientBuildError {
     #[error("URL is missing host component")]
     URLMissingHost,
-    
+
     #[error("Failed to build HTTP client: \n{0}")]
     ReqwestError(#[from] reqwest::Error),
-    
+
     #[error("Failed to resolve IP address for domain {0}")]
     DNSLookupFailed(String),
-    
+
     #[error("No IP addresses found for domain {0}")]
     NoIpAddressesFound(String),
 }
@@ -25,7 +25,7 @@ pub enum ClientBuildError {
 pub async fn build_client(
     parsed_url: &Url,
     ip: &Option<IpAddr>,
-    headers_config: &HeadersConfig
+    headers_config: &HeadersConfig,
 ) -> Result<Client, ClientBuildError> {
     let domain = parsed_url
         .host_str()

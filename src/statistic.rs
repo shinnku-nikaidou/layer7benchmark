@@ -1,4 +1,4 @@
-use std::sync::{atomic::AtomicU64};
+use std::sync::atomic::AtomicU64;
 use tokio::sync::OnceCell;
 
 #[derive(Default)]

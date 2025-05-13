@@ -26,7 +26,7 @@ pub async fn send_requests(req: FullRequest, mut shutdown: watch::Receiver<bool>
             .request(req.method.clone(), req.url.clone())
             .headers(req.headers.clone())
             .timeout(req.timeout);
-        
+
         tokio::select! {
             biased;
 
@@ -78,7 +78,9 @@ async fn process_response(resp: reqwest::Response, sc: &crate::statistic::Status
             }
         }
         bytes
-    }).await {
+    })
+    .await
+    {
         Ok(bytes) => bytes,
         Err(_) => {
             sc.status_other.fetch_add(1, Ordering::Relaxed);

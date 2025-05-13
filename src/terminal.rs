@@ -12,7 +12,9 @@ use std::{
 
 use crate::statistic::STATISTIC;
 
-pub async fn terminal_output(method: reqwest::Method, shutdown_signal: tokio::sync::watch::Receiver<bool>,
+pub async fn terminal_output(
+    method: reqwest::Method,
+    shutdown_signal: tokio::sync::watch::Receiver<bool>,
 ) -> anyhow::Result<()> {
     let s = STATISTIC.get().unwrap();
     let counter = &s.request_counter;
@@ -28,7 +30,7 @@ pub async fn terminal_output(method: reqwest::Method, shutdown_signal: tokio::sy
         if *shutdown_signal.borrow() {
             break Ok(());
         }
-        
+
         stdout
             .execute(MoveTo(0, y))?
             .execute(Clear(ClearType::FromCursorDown))?;

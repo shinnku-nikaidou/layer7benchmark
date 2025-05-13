@@ -1,9 +1,9 @@
 use std::net::IpAddr;
 
+use crate::parse_header::HeadersPair;
 use clap::Parser;
 use reqwest::Method;
 use url::Url;
-use crate::parse_header::HeadersPair;
 
 #[derive(Parser, Debug)]
 #[command(version)]
@@ -21,7 +21,7 @@ pub struct Args {
     pub time: u64,
 
     /// IP address to send the request to (default is automatically resolved from the URL)
-    /// If you have already found the original ip address, 
+    /// If you have already found the original ip address,
     /// you can use this option to bypass the CDN or some random WAF
     #[arg(short, long)]
     pub ip: Option<IpAddr>,
