@@ -60,6 +60,8 @@ pub async fn terminal_output(
             byte.get_appropriate_unit(UnitType::Decimal)
         )?;
 
+        writeln!(stdout, "")?;
+
         stdout.flush()?;
 
         tokio::time::sleep(Duration::from_millis(200)).await;
