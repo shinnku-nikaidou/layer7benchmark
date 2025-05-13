@@ -3,6 +3,7 @@ use std::sync::atomic::Ordering;
 use tokio::sync::watch;
 
 use crate::statistic::STATISTIC;
+use std::time::Duration;
 
 pub struct FullRequest {
     pub url: String,
@@ -26,8 +27,7 @@ pub async fn send_requests(req: FullRequest, mut shutdown: watch::Receiver<bool>
         let mut stream_byte = 0;
 
         tokio::select! {
-            biased;
-            result = request_builder.send() => {
+            result = request_builder.timeout(Duration::from_secs(10)).send() => {
                 if let Ok(resp) = result {
                     let status = resp.status().as_u16();
                     let mut stream = resp.bytes_stream();
