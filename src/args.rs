@@ -39,4 +39,11 @@ pub struct Args {
     /// Test mode - only send one request for testing or debugging
     #[arg(long = "test", default_value_t = false)]
     pub test: bool,
+
+    /// Timeout for each request in seconds
+    /// If the request takes longer than this time, it will be considered a timeout
+    /// It is different from the get stream timeout, which is applied to the full request body,
+    /// which in that case the time out is set to 60 seconds, different from the request timeout
+    #[arg(long = "timeout", default_value_t = 10)]
+    pub timeout: u64,
 }

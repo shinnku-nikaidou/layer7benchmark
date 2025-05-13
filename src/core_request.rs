@@ -10,6 +10,7 @@ pub struct FullRequest {
     pub client: reqwest::Client,
     pub headers: reqwest::header::HeaderMap,
     pub method: reqwest::Method,
+    pub timeout: Duration,
 }
 
 pub async fn send_requests(req: FullRequest, mut shutdown: watch::Receiver<bool>) {
@@ -23,7 +24,7 @@ pub async fn send_requests(req: FullRequest, mut shutdown: watch::Receiver<bool>
             .client
             .request(req.method.clone(), &req.url)
             .headers(req.headers.clone())
-            .timeout(Duration::from_secs(10));
+            .timeout(req.timeout);
 
         let mut stream_byte = 0;
 
@@ -34,7 +35,7 @@ pub async fn send_requests(req: FullRequest, mut shutdown: watch::Receiver<bool>
                 if let Ok(resp) = result {
                     let status = resp.status().as_u16();
 
-                    match timeout(Duration::from_secs(10), async {
+                    match timeout(Duration::from_secs(60), async {
                         let mut stream = resp.bytes_stream();
                         let mut bytes = 0;
 
@@ -67,6 +68,8 @@ pub async fn send_requests(req: FullRequest, mut shutdown: watch::Receiver<bool>
                         500..=599 => sc.status_5xx.fetch_add(1, Ordering::Relaxed),
                         _ => sc.status_other.fetch_add(1, Ordering::Relaxed),
                     };
+                } else {
+                    sc.status_other.fetch_add(1, Ordering::Relaxed);
                 }
                 tokio::task::yield_now().await;
             }

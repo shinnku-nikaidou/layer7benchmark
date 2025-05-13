@@ -18,6 +18,7 @@ async fn run(args: Args) -> Result<()> {
     let url = args.url.clone();
     let method = args.method;
     let parsed_url = Url::parse(&args.url).context("Failed to parse URL")?;
+    let timeout = Duration::from_secs(args.timeout);
     let (headers, special_headers) = parse_header::parse_header(args.header.clone())?;
 
     info!("Method is: {}", method);
@@ -46,6 +47,7 @@ async fn run(args: Args) -> Result<()> {
             client: client.clone(),
             headers: headers.clone(),
             method: method.clone(),
+            timeout: timeout.clone(),
         };
 
         let handle = tokio::spawn(core_request::send_requests(

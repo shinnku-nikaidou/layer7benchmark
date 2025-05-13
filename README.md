@@ -24,6 +24,11 @@
     test mode, only send one request for testing or debugging the answer
 -X or --method string
     http method to use (default is GET) options: GET or POST or PUT or DELETE or OPTIONS (also -X is still exactly the same as curl command)
+--timeout u64
+    timeout for the request (default is 10)
+    If the request takes longer than this time, it will be considered a timeout
+    It is different from the get stream timeout, which is applied to the full request body,
+    which in that case the time out is set to 60 seconds, different from the request timeout
 ```
 
 ### Example
