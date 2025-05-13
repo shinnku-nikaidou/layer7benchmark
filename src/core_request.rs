@@ -28,6 +28,8 @@ pub async fn send_requests(req: FullRequest, mut shutdown: watch::Receiver<bool>
         let mut stream_byte = 0;
 
         tokio::select! {
+            biased;
+
             result = request_builder.send() => {
                 if let Ok(resp) = result {
                     let status = resp.status().as_u16();
