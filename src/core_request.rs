@@ -26,9 +26,7 @@ pub async fn send_requests(req: FullRequest, mut shutdown: watch::Receiver<bool>
             .request(req.method.clone(), req.url.clone())
             .headers(req.headers.clone())
             .timeout(req.timeout);
-
-        let mut stream_byte = 0;
-
+        
         tokio::select! {
             biased;
 
@@ -36,33 +34,11 @@ pub async fn send_requests(req: FullRequest, mut shutdown: watch::Receiver<bool>
                 if let Ok(resp) = result {
                     let status = resp.status().as_u16();
 
-                    match timeout(Duration::from_secs(60), async {
-                        let mut stream = resp.bytes_stream();
-                        let mut bytes = 0;
+                    let stream_byte = process_response(resp, sc).await;
+                    counter.fetch_add(1, Ordering::Relaxed);
+                    network_traffics.fetch_add(stream_byte, Ordering::Relaxed);
 
-                        while let Some(chunk_res) = stream.next().await {
-                            match chunk_res {
-                                Ok(chunk) => {
-                                    bytes += chunk.len() as u64;
-                                }
-                                Err(_) => {
-                                    break;
-                                }
-                            }
-                        }
-                        bytes
-                    }).await {
-                        Ok(bytes) => {
-                            stream_byte = bytes;
-                        }
-                        Err(_) => {
-                            sc.status_other.fetch_add(1, Ordering::Relaxed);
-                        }
-                    }
-                     counter.fetch_add(1, Ordering::Relaxed);
-                     network_traffics.fetch_add(stream_byte, Ordering::Relaxed);
-
-                     match status {
+                    match status {
                         200..=299 => sc.status_2xx.fetch_add(1, Ordering::Relaxed),
                         300..=399 => sc.status_3xx.fetch_add(1, Ordering::Relaxed),
                         400..=499 => sc.status_4xx.fetch_add(1, Ordering::Relaxed),
@@ -82,6 +58,31 @@ pub async fn send_requests(req: FullRequest, mut shutdown: watch::Receiver<bool>
                     break;
                 }
             }
+        }
+    }
+}
+
+async fn process_response(resp: reqwest::Response, sc: &crate::statistic::StatusCounter) -> u64 {
+    match timeout(Duration::from_secs(60), async {
+        let mut stream = resp.bytes_stream();
+        let mut bytes = 0;
+
+        while let Some(chunk_res) = stream.next().await {
+            match chunk_res {
+                Ok(chunk) => {
+                    bytes += chunk.len() as u64;
+                }
+                Err(_) => {
+                    break;
+                }
+            }
+        }
+        bytes
+    }).await {
+        Ok(bytes) => bytes,
+        Err(_) => {
+            sc.status_other.fetch_add(1, Ordering::Relaxed);
+            0
         }
     }
 }
