@@ -1,3 +1,4 @@
+use byte_unit::{Byte, UnitType};
 use crossterm::{
     cursor::{self, MoveTo},
     terminal::{Clear, ClearType},
@@ -15,6 +16,7 @@ pub async fn terminal_output(method: reqwest::Method) -> anyhow::Result<()> {
     let s = STATISTIC.get().unwrap().clone();
     let counter = &s.request_counter.clone();
     let sc = &s.status_counter.clone();
+    let network_traffics = &s.network_traffics.clone();
 
     tokio::time::sleep(Duration::from_secs(4)).await;
     let mut stdout = stdout();
@@ -40,6 +42,15 @@ pub async fn terminal_output(method: reqwest::Method) -> anyhow::Result<()> {
             sc.status_4xx.load(Ordering::Relaxed),
             sc.status_5xx.load(Ordering::Relaxed),
             sc.status_other.load(Ordering::Relaxed)
+        )?;
+
+        let byte = Byte::from_u64(network_traffics.load(Ordering::Relaxed));
+
+        write!(
+            stdout,
+            "\nnetwork traffics: {} bytes, Human readable: {}",
+            byte,
+            byte.get_appropriate_unit(UnitType::Decimal)
         )?;
 
         stdout.flush()?;

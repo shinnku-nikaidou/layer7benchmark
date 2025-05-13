@@ -5,6 +5,7 @@ use tokio::sync::OnceCell;
 pub struct Statistic {
     pub request_counter: Arc<AtomicU64>,
     pub status_counter: StatusCounter,
+    pub network_traffics: Arc<AtomicU64>,
 }
 
 #[derive(Default, Clone)]
