@@ -5,34 +5,39 @@ mod parse_header;
 mod statistic;
 mod terminal;
 
-use anyhow::{Context, Result};
+use anyhow::Result;
 use args::Args;
 use clap::Parser;
 use log::{error, info};
 use std::time::Duration;
 use tokio::{runtime::Runtime, sync::watch};
-use url::Url;
+use crate::parse_header::HeadersConfig;
 
 async fn run(args: Args) -> Result<()> {
+    let Args {
+        concurrent_count,
+        url,
+        time,
+        ip,
+        header,
+        body,
+        method,
+        test,
+        timeout,
+    } = args;
     let mut handles = Vec::new();
-    let url = args.url.clone();
-    let method = args.method;
-    let parsed_url = Url::parse(&args.url).context("Failed to parse URL")?;
-    let timeout = Duration::from_secs(args.timeout);
-    let (headers, special_headers) = parse_header::parse_header(args.header.clone())?;
-
+    let timeout = Duration::from_secs(timeout);
+    let headers_config: HeadersConfig = header.into();
+    
     info!("Method is: {}", method);
-    info!("Headers is: {:?}", headers);
-    info!("enabled gzip: {:?}", special_headers.gzip);
-    info!("enabled deflate: {:?}", special_headers.deflate);
-    info!("cookie is: {:?}", special_headers.cookie);
-    info!("user agent is: {:?}", special_headers.user_agent);
+    headers_config.log_detail();
+    
+    let client = build_client::build_client(&url, &ip, &headers_config).await?;
+    let headers = headers_config.other_headers;
 
-    let client = build_client::build_client(&parsed_url, &args.ip, &special_headers).await?;
-
-    if args.test {
+    if test {
         info!("Test mode enabled. Only send one single request.");
-        let request_builder = client.request(method, &url);
+        let request_builder = client.request(method, url);
         let response = request_builder.headers(headers).send().await?;
         info!("Response status: {:?}", response.status());
         info!("Response is: {:?}", response.text().await?);
@@ -41,7 +46,7 @@ async fn run(args: Args) -> Result<()> {
 
     let (shutdown_tx, shutdown_rx) = watch::channel(false);
 
-    for _ in 0..args.concurrent_count {
+    for _ in 0..concurrent_count {
         let full_request = core_request::FullRequest {
             url: url.clone(),
             client: client.clone(),
@@ -59,7 +64,7 @@ async fn run(args: Args) -> Result<()> {
 
     let _terminal_handle = tokio::spawn(terminal::terminal_output(method.clone()));
 
-    tokio::time::sleep(Duration::from_secs(args.time)).await;
+    tokio::time::sleep(Duration::from_secs(time)).await;
     let _ = shutdown_tx.send(true);
 
     for handle in handles {

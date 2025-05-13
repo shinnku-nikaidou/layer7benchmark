@@ -1,51 +1,89 @@
 use std::str::FromStr;
-
+use log::info;
 use reqwest::header::{HeaderMap, HeaderName, HeaderValue};
 
-#[derive(Debug, Clone, Default)]
-pub struct SpecialHeaders {
+#[derive(Debug, Clone)]
+pub struct HeadersConfig {
     pub user_agent: Option<String>,
     pub gzip: bool,
     pub deflate: bool,
     pub cookie: Option<String>,
+    pub other_headers: HeaderMap,
 }
 
-pub fn parse_header(headers: Vec<String>) -> anyhow::Result<(HeaderMap, SpecialHeaders)> {
-    let mut header_map = HeaderMap::new();
-    let mut special_headers = SpecialHeaders::default();
 
-    for header in headers {
-        if let Some(pos) = header.find(':') {
-            let (name, value) = header.split_at(pos);
-            let name = name.trim().to_lowercase();
-            let value = value[1..].trim();
+impl HeadersConfig {
+    pub fn log_detail(&self) {
+        info!("gzip enabled: {}", self.gzip);
+        info!("deflate enabled: {}", self.deflate);
+        info!("cookie: {:?}", self.cookie);
+        info!("user agent: {:?}", self.user_agent);
+        info!("headers: {:?}", self.other_headers);
+    }
+}
 
-            match name.as_str() {
+#[derive(Debug, Clone, Default)]
+pub struct HeadersPair {
+    pub key: String,
+    pub value: String,
+}
+
+#[derive(Debug, Clone, thiserror::Error)]
+pub enum HeadersParseError {
+    #[error("Invalid header format: {0}\nExample: \"Accept: application/json\"")]
+    InvalidFormat(String),
+}
+
+impl FromStr for HeadersPair {
+    type Err = HeadersParseError;
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        let (key, value) = s
+            .split_once(':')
+            .ok_or_else(|| HeadersParseError::InvalidFormat(s.to_string()))?;
+        Ok(Self {
+            key: key.trim().to_string(),
+            value: value.trim().to_string(),
+        })
+    }
+}
+
+impl From<Vec<HeadersPair>> for HeadersConfig {
+    fn from(headers: Vec<HeadersPair>) -> Self {
+        let mut headers_map = HeaderMap::new();
+        let mut user_agent = None;
+        let mut gzip = false;
+        let mut deflate = false;
+        let mut cookie = None;
+
+        for header in headers {
+            match header.key.as_str() {
                 "user-agent" => {
-                    special_headers.user_agent = Some(value.to_string());
+                    user_agent = Some(header.value);
                 }
                 "accept-encoding" => {
-                    special_headers.gzip = value.contains("gzip");
-                    special_headers.deflate = value.contains("deflate");
+                    gzip = header.value.contains("gzip");
+                    deflate = header.value.contains("deflate");
                 }
                 "cookie" => {
-                    special_headers.cookie = Some(value.to_string());
+                    cookie = Some(header.value);
                 }
                 _ => {
-                    if let Ok(header_name) = HeaderName::from_str(&name) {
-                        if let Ok(header_value) = HeaderValue::from_str(value) {
-                            header_map.insert(header_name, header_value);
+                    if let Ok(header_name) = HeaderName::from_str(&header.key) {
+                        if let Ok(header_value) = HeaderValue::from_str(&header.value) {
+                            headers_map.insert(header_name, header_value);
                         }
                     }
                 }
             }
-        } else {
-            eprintln!(
-                "Invalid header format: '{}'. Expected 'Name: Value'.",
-                header
-            );
-            return Err(anyhow::anyhow!("Invalid header format"));
+        }
+
+        Self {
+            user_agent,
+            gzip,
+            deflate,
+            cookie,
+            other_headers: headers_map,
         }
     }
-    Ok((header_map, special_headers))
 }

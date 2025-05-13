@@ -6,12 +6,12 @@ use std::sync::Arc;
 use tokio::net::lookup_host;
 use url::Url;
 
-use crate::parse_header::SpecialHeaders;
+use crate::parse_header::HeadersConfig;
 
 pub async fn build_client(
     parsed_url: &Url,
     ip: &Option<IpAddr>,
-    special_headers: &SpecialHeaders,
+    headers_config: &HeadersConfig
 ) -> Result<Client> {
     let domain = parsed_url
         .host_str()
@@ -23,16 +23,16 @@ pub async fn build_client(
     let client_builder = Client::builder()
         .resolve(domain, socket_addr)
         .use_native_tls()
-        .gzip(special_headers.gzip)
-        .deflate(special_headers.deflate);
+        .gzip(headers_config.gzip)
+        .deflate(headers_config.deflate);
 
-    let client_builder = if let Some(user_agent) = &special_headers.user_agent {
+    let client_builder = if let Some(user_agent) = &headers_config.user_agent {
         client_builder.user_agent(user_agent)
     } else {
         client_builder
     };
 
-    let client_builder = if let Some(cookie) = &special_headers.cookie {
+    let client_builder = if let Some(cookie) = &headers_config.cookie {
         let jar = Arc::new(Jar::default());
         jar.add_cookie_str(cookie, parsed_url);
         client_builder.cookie_provider(jar)

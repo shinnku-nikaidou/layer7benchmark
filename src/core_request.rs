@@ -4,9 +4,10 @@ use tokio::{sync::watch, time::timeout};
 
 use crate::statistic::STATISTIC;
 use std::time::Duration;
+use url::Url;
 
 pub struct FullRequest {
-    pub url: String,
+    pub url: Url,
     pub client: reqwest::Client,
     pub headers: reqwest::header::HeaderMap,
     pub method: reqwest::Method,
@@ -22,7 +23,7 @@ pub async fn send_requests(req: FullRequest, mut shutdown: watch::Receiver<bool>
     loop {
         let request_builder = req
             .client
-            .request(req.method.clone(), &req.url)
+            .request(req.method.clone(), req.url.clone())
             .headers(req.headers.clone())
             .timeout(req.timeout);
 

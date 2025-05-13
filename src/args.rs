@@ -2,6 +2,8 @@ use std::net::IpAddr;
 
 use clap::Parser;
 use reqwest::Method;
+use url::Url;
+use crate::parse_header::HeadersPair;
 
 #[derive(Parser, Debug)]
 #[command(version)]
@@ -12,7 +14,7 @@ pub struct Args {
 
     /// URL to download
     #[arg(short = 'u', long = "url", default_value = "https://www.google.com")]
-    pub url: String,
+    pub url: Url,
 
     /// Time in seconds to run the benchmark
     #[arg(short = 't', long = "time", default_value_t = 60)]
@@ -25,8 +27,8 @@ pub struct Args {
     pub ip: Option<IpAddr>,
 
     /// HTTP headers to send (same format as curl's -H option)
-    #[arg(short = 'H', long = "header", default_values_t = Vec::<String>::new())]
-    pub header: Vec<String>,
+    #[arg(short = 'H', long = "header")]
+    pub header: Vec<HeadersPair>,
 
     /// Request body content
     #[arg(long = "body", default_value = "")]
