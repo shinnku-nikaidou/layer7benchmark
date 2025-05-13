@@ -54,6 +54,7 @@ pub async fn send_requests(req: FullRequest, mut shutdown: watch::Receiver<bool>
                             stream_byte = bytes;
                         }
                         Err(_) => {
+                            sc.status_other.fetch_add(1, Ordering::Relaxed);
                         }
                     }
                      counter.fetch_add(1, Ordering::Relaxed);
