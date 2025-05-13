@@ -5,15 +5,15 @@ mod parse_header;
 mod statistic;
 mod terminal;
 
+use crate::parse_header::HeadersConfig;
 use anyhow::Result;
 use args::Args;
 use clap::Parser;
 use log::{debug, error, info};
 use std::time::Duration;
-use tokio::{runtime::Runtime, sync::watch};
-use tokio::task::JoinSet;
 use tokio::signal;
-use crate::parse_header::HeadersConfig;
+use tokio::task::JoinSet;
+use tokio::{runtime::Runtime, sync::watch};
 
 async fn run(args: Args) -> Result<()> {
     let Args {
@@ -30,10 +30,10 @@ async fn run(args: Args) -> Result<()> {
     let mut handles = JoinSet::new();
     let timeout = Duration::from_secs(timeout);
     let headers_config: HeadersConfig = header.into();
-    
+
     info!("Method is: {}", method);
     headers_config.log_detail();
-    
+
     let client = build_client::build_client(&url, &ip, &headers_config).await?;
     let headers = headers_config.other_headers;
 
@@ -64,19 +64,27 @@ async fn run(args: Args) -> Result<()> {
         handles.spawn(handle);
     }
 
-    tokio::spawn(terminal::terminal_output(method.clone(), shutdown_rx.clone()));
+    tokio::spawn(terminal::terminal_output(
+        method.clone(),
+        shutdown_rx.clone(),
+    ));
 
-    tokio::time::sleep(Duration::from_secs(time)).await;
-    let _ = shutdown_tx.send(true);
+    let shutdown_tx_for_timer = shutdown_tx.clone();
+    tokio::spawn(async move {
+        tokio::time::sleep(Duration::from_secs(time)).await;
+        shutdown_tx_for_timer.send(true).unwrap();
+    });
 
     handle_shutdown_signals(shutdown_tx).await;
     Ok(())
 }
 
-async fn handle_shutdown_signals(shutdown_tx: watch::Sender<bool>)  {
+async fn handle_shutdown_signals(shutdown_tx: watch::Sender<bool>) {
     let ctrl_c = async {
         #[allow(clippy::expect_used)]
-        signal::ctrl_c().await.expect("Failed to install Ctrl+C handler");
+        signal::ctrl_c()
+            .await
+            .expect("Failed to install Ctrl+C handler");
     };
 
     #[cfg(unix)]
@@ -117,7 +125,6 @@ async fn handle_shutdown_signals(shutdown_tx: watch::Sender<bool>)  {
 
     // Send shutdown signal to all tasks
     let _ = shutdown_tx.send(true);
-
 }
 
 fn main() {
