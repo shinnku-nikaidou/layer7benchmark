@@ -6,19 +6,19 @@ pub struct FullRequest {
     pub url: String,
     pub client: reqwest::Client,
     pub headers: reqwest::header::HeaderMap,
-    pub method: String,
-    pub shutdown: watch::Receiver<bool>,
+    pub method: reqwest::Method,
 }
 
 pub async fn send_requests(
-    mut fr: FullRequest,
+    req: FullRequest,
     counter: Arc<AtomicU64>,
+    mut shutdown: watch::Receiver<bool>,
 ) {
     loop {
-        let request_builder = fr
+        let request_builder = req
             .client
-            .request(fr.method.parse().unwrap(), &fr.url)
-            .headers(fr.headers.clone());
+            .request(req.method.clone(), &req.url)
+            .headers(req.headers.clone());
 
         tokio::select! {
             biased;
@@ -30,8 +30,8 @@ pub async fn send_requests(
                 tokio::task::yield_now().await;
             }
 
-            _ = fr.shutdown.changed() => {
-                let shutdown = fr.shutdown.borrow_and_update();
+            _ = shutdown.changed() => {
+                let shutdown = shutdown.borrow_and_update();
 
                 if *shutdown {
                     break;

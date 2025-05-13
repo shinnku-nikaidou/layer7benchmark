@@ -19,20 +19,9 @@ async fn run(args: Args) -> Result<()> {
     let method = args.method;
     let parsed_url = Url::parse(&args.url).context("Failed to parse URL")?;
     let request_counter = Arc::new(AtomicU64::new(0));
-
-    match method.as_str() {
-        "GET" | "POST" | "PUT" | "DELETE" | "OPTIONS" => {
-            info!("Method is: {}", method);
-        }
-        _ => {
-            return Err(anyhow::anyhow!(
-                "Method must be GET, POST, PUT, DELETE, or OPTIONS"
-            ));
-        }
-    }
-
     let (headers, special_headers) = parse_header::parse_header(args.header.clone())?;
 
+    info!("Method is: {}", method);
     info!("Headers is: {:?}", headers);
     info!("enabled gzip: {:?}", special_headers.gzip);
     info!("enabled deflate: {:?}", special_headers.deflate);
@@ -43,8 +32,7 @@ async fn run(args: Args) -> Result<()> {
 
     if args.test {
         info!("Test mode enabled. Only send one single request.");
-        let request_builder =
-            client.request(method.parse().context("Failed to parse HTTP method")?, &url);
+        let request_builder = client.request(method, &url);
         let response = request_builder.headers(headers).send().await?;
         info!("Response status: {:?}", response.status());
         info!("Response is: {:?}", response.text().await?);
@@ -59,11 +47,14 @@ async fn run(args: Args) -> Result<()> {
             client: client.clone(),
             headers: headers.clone(),
             method: method.clone(),
-            shutdown: shutdown_rx.clone(),
         };
         let counter_clone = Arc::clone(&request_counter);
 
-        let handle = tokio::spawn(core_request::send_requests(full_request, counter_clone));
+        let handle = tokio::spawn(core_request::send_requests(
+            full_request,
+            counter_clone,
+            shutdown_rx.clone(),
+        ));
         handles.push(handle);
     }
 
@@ -90,7 +81,7 @@ fn main() {
         std::env::set_var("RUST_LOG", "info");
     }
     env_logger::init();
-    info!("l7_httpflood started");
+    info!("l7_flood started");
     let runtime = Runtime::new().expect("Could not build the tokio runtime");
 
     if let Err(error) = runtime.block_on(run(args)) {
