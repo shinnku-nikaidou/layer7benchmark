@@ -1,6 +1,6 @@
 use futures_util::StreamExt;
 use std::sync::atomic::Ordering;
-use tokio::sync::watch;
+use tokio::{sync::watch, time::timeout};
 
 use crate::statistic::STATISTIC;
 use std::time::Duration;
@@ -22,24 +22,36 @@ pub async fn send_requests(req: FullRequest, mut shutdown: watch::Receiver<bool>
         let request_builder = req
             .client
             .request(req.method.clone(), &req.url)
-            .headers(req.headers.clone());
+            .headers(req.headers.clone())
+            .timeout(Duration::from_secs(10));
 
         let mut stream_byte = 0;
 
         tokio::select! {
-            result = request_builder.timeout(Duration::from_secs(10)).send() => {
+            result = request_builder.send() => {
                 if let Ok(resp) = result {
                     let status = resp.status().as_u16();
-                    let mut stream = resp.bytes_stream();
 
-                    while let Some(chunk_res) = stream.next().await {
-                        match chunk_res {
-                            Ok(chunk) => {
-                                stream_byte += chunk.len() as u64;
+                    match timeout(Duration::from_secs(10), async {
+                        let mut stream = resp.bytes_stream();
+                        let mut bytes = 0;
+
+                        while let Some(chunk_res) = stream.next().await {
+                            match chunk_res {
+                                Ok(chunk) => {
+                                    bytes += chunk.len() as u64;
+                                }
+                                Err(_) => {
+                                    break;
+                                }
                             }
-                            Err(_) => {
-                                break;
-                            }
+                        }
+                        bytes
+                    }).await {
+                        Ok(bytes) => {
+                            stream_byte = bytes;
+                        }
+                        Err(_) => {
                         }
                     }
                      counter.fetch_add(1, Ordering::Relaxed);
