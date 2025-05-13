@@ -2,7 +2,6 @@ use std::str::FromStr;
 
 use reqwest::header::{HeaderMap, HeaderName, HeaderValue};
 
-
 #[derive(Debug, Clone, Default)]
 pub struct SpecialHeaders {
     pub user_agent: Option<String>,

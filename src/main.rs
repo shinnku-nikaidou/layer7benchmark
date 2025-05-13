@@ -2,14 +2,14 @@ mod args;
 mod build_client;
 mod core_request;
 mod parse_header;
+mod statistic;
 mod terminal;
-use anyhow::{Context, Result};
-use log::{error, info};
-use std::{sync::Arc, time::Duration};
 
+use anyhow::{Context, Result};
 use args::Args;
 use clap::Parser;
-use std::sync::atomic::AtomicU64;
+use log::{error, info};
+use std::time::Duration;
 use tokio::{runtime::Runtime, sync::watch};
 use url::Url;
 
@@ -18,7 +18,6 @@ async fn run(args: Args) -> Result<()> {
     let url = args.url.clone();
     let method = args.method;
     let parsed_url = Url::parse(&args.url).context("Failed to parse URL")?;
-    let request_counter = Arc::new(AtomicU64::new(0));
     let (headers, special_headers) = parse_header::parse_header(args.header.clone())?;
 
     info!("Method is: {}", method);
@@ -48,20 +47,15 @@ async fn run(args: Args) -> Result<()> {
             headers: headers.clone(),
             method: method.clone(),
         };
-        let counter_clone = Arc::clone(&request_counter);
 
         let handle = tokio::spawn(core_request::send_requests(
             full_request,
-            counter_clone,
             shutdown_rx.clone(),
         ));
         handles.push(handle);
     }
 
-    let _terminal_handle = tokio::spawn(terminal::terminal_output(
-        Arc::clone(&request_counter),
-        method.clone(),
-    ));
+    let _terminal_handle = tokio::spawn(terminal::terminal_output(method.clone()));
 
     tokio::time::sleep(Duration::from_secs(args.time)).await;
     let _ = shutdown_tx.send(true);
@@ -77,6 +71,7 @@ async fn run(args: Args) -> Result<()> {
 
 fn main() {
     let args = Args::parse();
+    let _ = statistic::STATISTIC.set(statistic::Statistic::default());
     if std::env::var_os("RUST_LOG").is_none() {
         std::env::set_var("RUST_LOG", "info");
     }
