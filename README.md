@@ -2,6 +2,21 @@
 
 [中文说明](https://github.com/shinnku-nikaidou/layer7benchmark/blob/main/README_zh.md)
 
+## Introduction
+
+Layer7Benchmark is a tool to benchmark the performance of Layer 7 (application layer) protocols, such as HTTP and HTTPS. It allows you to test the response time and throughput of your web applications under different load conditions.
+
+It is designed to be simple and easy to use, making it suitable for both developers and system administrators who want to ensure their applications can handle the expected traffic.
+
+DO NOT USE THIS TOOL FOR MALICIOUS PURPOSES. IT IS INTENDED FOR LEGITIMATE PERFORMANCE TESTING ONLY. USING THIS TOOL TO ATTACK OR DISRUPT WEBSITES (such as DDOS) WITHOUT PERMISSION IS ILLEGAL AND UNETHICAL.
+
+I am not responsible for any misuse of this tool. Please use it responsibly and ethically.
+
+## Features
+
+This tool is completely written in Rust and is designed to be fast and efficient. It uses the `reqwest` library for making HTTP and HTTPS requests, and the `tokio` library for asynchronous programming.
+So it is extremely fast and efficient. Much lower CPU usage than other tools like [webbenchmark](https://github.com/maintell/webBenchmark).
+
 ## Usage
 
 ```bash
@@ -35,6 +50,15 @@
     body to send with the request (default is empty)
     This option is only valid for POST and PUT requests
     You could add this option in GET requests, but it will be ignored
+--random
+    ⚠️ If you use this option, the --url option grammar will be changed.
+    In summary, this program will now randomly generate URLs based on your --url option.
+    For example, if you set --url to https://www.example.com/[a-z0-9]{10},
+    the program will randomly generate URLs like https://www.example.com/abc123xyz0,
+    https://www.example.com/xyz789abc1 , etc., and send requests to these random URLs.
+    If you want to use this option, please make sure you understand the grammar of the URL you set.
+    This option can be combined with the --test option. And the --test option will only send one request to a randomly generated URL, also the --test option will print the URL which is randomly generated.
+    Full grammar is down below and you can keep reading the following text.
 ```
 
 ### Example
@@ -53,20 +77,42 @@
 ./layer7benchmark -u https://x.com/home -c 16 -t 360 --ip 172.66.0.227
 ```
 
-## Introduction
+## random URL grammar
 
-Layer7Benchmark is a tool to benchmark the performance of Layer 7 (application layer) protocols, such as HTTP and HTTPS. It allows you to test the response time and throughput of your web applications under different load conditions.
+In summary, this program will now randomly generate URLs based on your `--url` or `-u` option.
+There are two types of grammar.
 
-It is designed to be simple and easy to use, making it suitable for both developers and system administrators who want to ensure their applications can handle the expected traffic.
+1. First is `[expr]`
+2. Second is `[expr]{n}`
 
-DO NOT USE THIS TOOL FOR MALICIOUS PURPOSES. IT IS INTENDED FOR LEGITIMATE PERFORMANCE TESTING ONLY. USING THIS TOOL TO ATTACK OR DISRUPT WEBSITES (such as DDOS) WITHOUT PERMISSION IS ILLEGAL AND UNETHICAL.
+`expr` contains three types of characters: `a-z`, `A-Z`, `0-9`. You can combine them together.
+such as `[a-zA-Z0-9]`, `[a-zA-Z]`, `[0-9]`, etc.
 
-I am not responsible for any misuse of this tool. Please use it responsibly and ethically.
+> note: `[a-zA-Z0-9]` will generate a random character from `a-z`, `A-Z`, `0-9`.
 
-## Features
+`n` is a number, which means how many characters you want to generate.
+such as `[0-9]{3}` will generate 3 random characters from `0-9`. such as `111`, `456`, `364`, etc.
 
-This tool is completely written in Rust and is designed to be fast and efficient. It uses the `reqwest` library for making HTTP and HTTPS requests, and the `tokio` library for asynchronous programming.
-So it is extremely fast and efficient. Much lower CPU usage than other tools like [webbenchmark](https://github.com/maintell/webBenchmark).
+> note: `[a-zA-Z]` is exactly the same as `[a-zA-Z]{1}` or [A-Za-z].
+
+### some examples
+
+```bash
+https://www.example.com/[0-9]{3}
+
+# will generate a random URL like
+https://www.example.com/111
+https://www.example.com/456
+https://www.example.com/364
+
+https://www.example.com/random/path?foo=[a-z0-9]&bar=[a-zA-Z]{3}
+# will generate a random URL like
+https://www.example.com/random/path?foo=1&bar=MPL 
+https://www.example.com/random/path?foo=2&bar=deD
+https://www.example.com/random/path?foo=a&bar=gHi
+
+```
+
 
 ## 中文说明
 

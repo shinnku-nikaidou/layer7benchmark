@@ -48,4 +48,15 @@ pub struct Args {
     /// which in that case the time out is set to 60 seconds, different from the request timeout
     #[arg(long = "timeout", default_value_t = 10)]
     pub timeout: u64,
+
+    /// ⚠️ If you use this option, the --url option grammar will be changed.
+    /// In summary, this program will now randomly generate URLs based on your --url option.
+    /// For example, if you set --url to https://www.example.com/[a-z0-9]{10},
+    /// the program will randomly generate URLs like https://www.example.com/abc123xyz0,
+    /// https://www.example.com/xyz789abc1 , etc., and send requests to these random URLs.
+    /// If you want to use this option, please make sure you understand the grammar of the URL you set.
+    /// This option can be combined with the --test option. And the --test option will only send one request to a randomly generated URL, also the --test option will print the URL which is randomly generated.
+    /// Full grammar is down below and you can keep reading the following text.
+    #[arg(long = "random", default_value_t = false)]
+    pub random: bool,
 }

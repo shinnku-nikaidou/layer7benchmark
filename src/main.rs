@@ -3,6 +3,7 @@ mod build_client;
 mod core_request;
 mod http_benchmark;
 mod parse_header;
+mod randomization;
 mod shutdown;
 mod statistic;
 mod terminal;
