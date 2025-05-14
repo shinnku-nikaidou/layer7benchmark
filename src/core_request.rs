@@ -6,12 +6,14 @@ use crate::statistic::STATISTIC;
 use std::time::Duration;
 use url::Url;
 
+#[derive(Debug, Clone)]
 pub struct FullRequest {
     pub url: Url,
     pub client: reqwest::Client,
     pub headers: reqwest::header::HeaderMap,
     pub method: reqwest::Method,
     pub timeout: Duration,
+    pub body: Option<String>,
 }
 
 pub async fn send_requests(req: FullRequest, mut shutdown: watch::Receiver<bool>) {
@@ -25,6 +27,7 @@ pub async fn send_requests(req: FullRequest, mut shutdown: watch::Receiver<bool>
             .client
             .request(req.method.clone(), req.url.clone())
             .headers(req.headers.clone())
+            .body(req.body.clone().unwrap_or_default())
             .timeout(req.timeout);
 
         tokio::select! {
