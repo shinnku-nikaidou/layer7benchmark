@@ -13,7 +13,7 @@
     下载目标 URL（默认 https://www.google.com）  
 -t 或 --time u32  
     下载持续时间（默认 60 秒）  
--h 或 --help  
+--help  
     显示帮助信息  
 -v 或 --version  
     显示版本信息  

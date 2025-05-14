@@ -13,7 +13,7 @@
     url to download (default is https://www.google.com)
 -t or --time u32
     time to download (default is 60)
--h or --help
+--help
     help for layer7benchmark
 -v or --version
     version for layer7benchmark
