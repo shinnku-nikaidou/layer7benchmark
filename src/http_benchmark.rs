@@ -24,11 +24,14 @@ pub async fn run(args: Args) -> Result<()> {
     info!("Method is: {}", method);
     headers_config.log_detail();
 
-    let client = build_client::build_client(&url, &args.ip, &headers_config).await?;
+    let url_t =
+        reqwest::Url::parse(&url).map_err(|e| anyhow::anyhow!("Failed to parse URL: {}", e))?;
+
+    let client = build_client::build_client(&url_t, &args.ip, &headers_config).await?;
     let headers = headers_config.other_headers;
 
     if args.test {
-        test_request(client, url, method, headers).await?;
+        test_request(client, url_t, method, headers).await?;
         return Ok(());
     }
 

@@ -3,7 +3,6 @@ use std::net::IpAddr;
 use crate::parse_header::HeadersPair;
 use clap::Parser;
 use reqwest::Method;
-use url::Url;
 
 #[derive(Parser, Debug)]
 #[command(version)]
@@ -14,7 +13,7 @@ pub struct Args {
 
     /// URL to download
     #[arg(short = 'u', long = "url", default_value = "https://www.google.com")]
-    pub url: Url,
+    pub url: String,
 
     /// Time in seconds to run the benchmark
     #[arg(short = 't', long = "time", default_value_t = 60)]

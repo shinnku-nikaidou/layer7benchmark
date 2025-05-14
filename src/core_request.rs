@@ -1,8 +1,8 @@
 use anyhow::{Context, Result};
 use futures_util::StreamExt;
+use log::debug;
 use std::sync::atomic::Ordering;
 use tokio::{sync::watch, time::timeout};
-use log::debug;
 
 use crate::statistic::STATISTIC;
 use std::time::Duration;
@@ -10,7 +10,7 @@ use url::Url;
 
 #[derive(Debug, Clone)]
 pub struct FullRequest {
-    pub url: Url,
+    pub url: String,
     pub client: reqwest::Client,
     pub headers: reqwest::header::HeaderMap,
     pub method: reqwest::Method,
@@ -29,7 +29,7 @@ impl FullRequest {
             debug!("Random URL generated: {}", random_url);
             Url::parse(&random_url).context("Failed to parse random URL")
         } else {
-            Ok(self.url.clone())
+            Url::parse(&self.url).context("Failed to parse URL")
         }
     }
 

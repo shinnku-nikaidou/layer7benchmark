@@ -85,4 +85,13 @@ mod tests {
             println!("{}", generator());
         }
     }
+
+    #[test]
+    fn test3() {
+        let generator =
+            make_template_generator("https://shinnku.com/[a-zA-Z0-9]{10}");
+        for _ in 0..30 {
+            println!("{}", generator());
+        }
+    }
 }
