@@ -66,10 +66,9 @@ pub async fn send_requests(req: FullRequest, mut shutdown: watch::Receiver<bool>
 }
 
 async fn process_response(resp: reqwest::Response, sc: &crate::statistic::StatusCounter) -> u64 {
+    let mut bytes = 0;
     match timeout(Duration::from_secs(60), async {
         let mut stream = resp.bytes_stream();
-        let mut bytes = 0;
-
         while let Some(chunk_res) = stream.next().await {
             match chunk_res {
                 Ok(chunk) => {
@@ -87,7 +86,7 @@ async fn process_response(resp: reqwest::Response, sc: &crate::statistic::Status
         Ok(bytes) => bytes,
         Err(_) => {
             sc.status_other.fetch_add(1, Ordering::Relaxed);
-            0
+            bytes
         }
     }
 }

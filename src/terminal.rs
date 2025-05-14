@@ -43,7 +43,7 @@ pub async fn terminal_output(
 
         write!(
             stdout,
-            "\nrequest status counter's results: 2xx: {} 3xx: {} 4xx: {} 5xx: {} other: {}",
+            "\nrequest status counter's results: 2xx: {} 3xx: {} 4xx: {} 5xx: {} timeout: {}",
             sc.status_2xx.load(Ordering::Relaxed),
             sc.status_3xx.load(Ordering::Relaxed),
             sc.status_4xx.load(Ordering::Relaxed),
