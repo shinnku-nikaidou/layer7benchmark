@@ -1,5 +1,7 @@
 # Layer7Benchmark
 
+[中文说明](https://github.com/shinnku-nikaidou/layer7benchmark/blob/main/README_zh.md)
+
 ## Usage
 
 ```bash
@@ -29,6 +31,10 @@
     If the request takes longer than this time, it will be considered a timeout
     It is different from the get stream timeout, which is applied to the full request body,
     which in that case the time out is set to 60 seconds, different from the request timeout
+--body string
+    body to send with the request (default is empty)
+    This option is only valid for POST and PUT requests
+    You could add this option in GET requests, but it will be ignored
 ```
 
 ### Example
@@ -60,7 +66,7 @@ I am not responsible for any misuse of this tool. Please use it responsibly and 
 ## Features
 
 This tool is completely written in Rust and is designed to be fast and efficient. It uses the `reqwest` library for making HTTP and HTTPS requests, and the `tokio` library for asynchronous programming.
-So it is extreamly fast and efficient. Much lower CPU usage than other tools like [webbenchmark](https://github.com/maintell/webBenchmark).
+So it is extremely fast and efficient. Much lower CPU usage than other tools like [webbenchmark](https://github.com/maintell/webBenchmark).
 
 ## 中文说明
 
@@ -71,9 +77,9 @@ Layer7Benchmark 是一个用于基准测试 Layer 7（应用层）协议（如 H
 它完全用 Rust 编写，旨在快速高效。它使用 `reqwest` 库进行 HTTP 和 HTTPS 请求，并使用 `tokio` 库进行异步编程。
 因此，它非常快速高效。比其他工具（如 [webbenchmark](https://github.com/maintell/webBenchmark)）的 CPU 使用率低得多。
 
-* 不要使用这个工具进行恶意目的。它仅用于合法的性能测试。未经许可使用此工具攻击或破坏网站（例如 DDOS）是非法和不道德的。
-* 我不对此工具的任何误用负责。请负责任和道德地使用它。
+- 不要使用这个工具进行恶意目的。它仅用于合法的性能测试。未经许可使用此工具攻击或破坏网站（例如 DDOS）是非法和不道德的。
+- 我不对此工具的任何误用负责。请负责任和道德地使用它。
 
 ## License
 
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+This project is licensed under the MIT License - see the [LICENSE](https://github.com/shinnku-nikaidou/layer7benchmark/blob/main/License) file for details.
