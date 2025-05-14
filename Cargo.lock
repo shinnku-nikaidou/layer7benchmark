@@ -966,7 +966,7 @@ dependencies = [
 
 [[package]]
 name = "layer7benchmark"
-version = "1.0.0"
+version = "2.0.1"
 dependencies = [
  "anyhow",
  "byte-unit",
