@@ -59,4 +59,8 @@ pub struct Args {
     /// Full grammar is down below and you can keep reading the following text.
     #[arg(long = "random", default_value_t = false)]
     pub random: bool,
+
+    /// Four log levels are available: error, warn, info, and debug.
+    #[arg(long = "log-level", default_value = "info")]
+    pub log_level: String,
 }

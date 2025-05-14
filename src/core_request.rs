@@ -1,6 +1,8 @@
+use anyhow::{Context, Result};
 use futures_util::StreamExt;
 use std::sync::atomic::Ordering;
 use tokio::{sync::watch, time::timeout};
+use log::debug;
 
 use crate::statistic::STATISTIC;
 use std::time::Duration;
@@ -14,6 +16,51 @@ pub struct FullRequest {
     pub method: reqwest::Method,
     pub timeout: Duration,
     pub body: Option<String>,
+    pub random: bool,
+}
+
+impl FullRequest {
+    fn get_url(&self, generator: &Option<impl Fn() -> String>) -> Result<Url> {
+        if self.random {
+            let gen = generator
+                .as_ref()
+                .context("Random generator not initialized")?;
+            let random_url = gen();
+            debug!("Random URL generated: {}", random_url);
+            Url::parse(&random_url).context("Failed to parse random URL")
+        } else {
+            Ok(self.url.clone())
+        }
+    }
+
+    fn build_request(
+        &self,
+        generator: &Option<impl Fn() -> String>,
+    ) -> Result<reqwest::RequestBuilder> {
+        let url = self.get_url(generator)?;
+        let request = self
+            .client
+            .request(self.method.clone(), url)
+            .headers(self.headers.clone())
+            .timeout(self.timeout);
+
+        if let Some(ref body) = self.body {
+            Ok(request.body(body.clone()))
+        } else {
+            Ok(request)
+        }
+    }
+}
+
+#[inline]
+fn update_status_counter(status: u16, sc: &crate::statistic::StatusCounter) {
+    match status {
+        200..=299 => sc.status_2xx.fetch_add(1, Ordering::Relaxed),
+        300..=399 => sc.status_3xx.fetch_add(1, Ordering::Relaxed),
+        400..=499 => sc.status_4xx.fetch_add(1, Ordering::Relaxed),
+        500..=599 => sc.status_5xx.fetch_add(1, Ordering::Relaxed),
+        _ => sc.status_other.fetch_add(1, Ordering::Relaxed),
+    };
 }
 
 pub async fn send_requests(req: FullRequest, mut shutdown: watch::Receiver<bool>) {
@@ -21,14 +68,13 @@ pub async fn send_requests(req: FullRequest, mut shutdown: watch::Receiver<bool>
     let counter = &s.request_counter;
     let sc = &s.status_counter;
     let network_traffics = &s.network_traffics;
+    let generator = req.random.then(|| {
+        let template = req.url.to_string();
+        crate::randomization::make_template_generator(&template)
+    });
 
     loop {
-        let request_builder = req
-            .client
-            .request(req.method.clone(), req.url.clone())
-            .headers(req.headers.clone())
-            .body(req.body.clone().unwrap_or_default())
-            .timeout(req.timeout);
+        let request_builder = req.build_request(&generator).unwrap();
 
         tokio::select! {
             biased;
@@ -41,13 +87,7 @@ pub async fn send_requests(req: FullRequest, mut shutdown: watch::Receiver<bool>
                     counter.fetch_add(1, Ordering::Relaxed);
                     network_traffics.fetch_add(stream_byte, Ordering::Relaxed);
 
-                    match status {
-                        200..=299 => sc.status_2xx.fetch_add(1, Ordering::Relaxed),
-                        300..=399 => sc.status_3xx.fetch_add(1, Ordering::Relaxed),
-                        400..=499 => sc.status_4xx.fetch_add(1, Ordering::Relaxed),
-                        500..=599 => sc.status_5xx.fetch_add(1, Ordering::Relaxed),
-                        _ => sc.status_other.fetch_add(1, Ordering::Relaxed),
-                    };
+                    update_status_counter(status, sc);
                 } else {
                     sc.status_other.fetch_add(1, Ordering::Relaxed);
                 }

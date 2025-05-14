@@ -9,7 +9,12 @@ use tokio::sync::watch;
 use tokio::task::JoinSet;
 
 pub async fn run(args: Args) -> Result<()> {
-    let Args { url, method, .. } = args;
+    let Args {
+        url,
+        method,
+        random,
+        ..
+    } = args;
 
     let mut handles = JoinSet::new();
     let timeout = Duration::from_secs(args.timeout);
@@ -35,6 +40,7 @@ pub async fn run(args: Args) -> Result<()> {
         headers,
         method: method.clone(),
         timeout,
+        random,
         body: (!args.body.is_empty()).then(|| args.body.clone()),
     };
 

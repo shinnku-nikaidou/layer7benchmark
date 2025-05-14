@@ -21,6 +21,11 @@ fn main() {
     if std::env::var_os("RUST_LOG").is_none() {
         std::env::set_var("RUST_LOG", DEFAULT_LOG_LEVEL);
     }
+
+    if args.log_level != DEFAULT_LOG_LEVEL {
+        std::env::set_var("RUST_LOG", args.log_level.as_str());
+    }
+
     env_logger::init();
     info!("l7_flood started");
     let runtime = Runtime::new().expect("Could not build the tokio runtime");
