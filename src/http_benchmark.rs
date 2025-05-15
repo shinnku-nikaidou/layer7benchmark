@@ -55,10 +55,14 @@ pub async fn run(args: Args) -> Result<()> {
         handles.spawn(handle);
     }
 
-    tokio::spawn(terminal::terminal_output(
-        method.clone(),
-        shutdown_rx.clone(),
-    ));
+    if args.normal_output {
+        tokio::spawn(terminal::normal_output(method.clone(), shutdown_rx.clone()));
+    } else {
+        tokio::spawn(terminal::terminal_output(
+            method.clone(),
+            shutdown_rx.clone(),
+        ));
+    }
 
     tokio::spawn(shutdown::handle_shutdown_signals(shutdown_tx.clone()));
     wait_for_completion(time, shutdown_tx.clone(), shutdown_rx.clone()).await?;

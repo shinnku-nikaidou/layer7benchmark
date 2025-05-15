@@ -62,4 +62,7 @@ pub struct Args {
     /// Four log levels are available: error, warn, info, and debug.
     #[arg(long = "log-level", default_value = "info")]
     pub log_level: String,
+
+    #[arg(long = "normal-output", default_value_t = false)]
+    pub normal_output: bool,
 }
