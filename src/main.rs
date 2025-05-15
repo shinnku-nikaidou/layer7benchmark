@@ -4,6 +4,7 @@ mod core_request;
 mod http_benchmark;
 mod parse_header;
 mod randomization;
+mod server;
 mod shutdown;
 mod statistic;
 mod terminal;
@@ -30,9 +31,14 @@ fn main() {
     info!("l7_flood started");
     let runtime = Runtime::new().expect("Could not build the tokio runtime");
 
-    if let Err(error) = runtime.block_on(http_benchmark::run(args)) {
-        error!("Exited with error: {}", error);
+    let result = if args.server.is_empty() {
+        runtime.block_on(http_benchmark::run(args))
     } else {
-        info!("Finished.");
+        runtime.block_on(server::connect_to_server())
+    };
+
+    match result {
+        Ok(_) => info!("Finished."),
+        Err(error) => error!("Exited with error: {}", error),
     }
 }
