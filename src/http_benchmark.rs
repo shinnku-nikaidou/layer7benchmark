@@ -5,7 +5,7 @@ use crate::parse_header::HeadersConfig;
 use crate::{build_client, shutdown, terminal};
 use anyhow::Result;
 use log::{debug, info};
-use rand::{rng, Rng};
+use rand::Rng;
 use reqwest::Client;
 use std::time::Duration;
 use tokio::sync::watch;
@@ -33,14 +33,13 @@ async fn generate_client(
     ip: &Option<std::net::IpAddr>,
     ip_lists: &Option<Vec<std::net::IpAddr>>,
     headers_config: &HeadersConfig,
-    ip_files: &str,
 ) -> Result<Client, ClientBuildError> {
-    if !ip_files.is_empty() {
+    if ip_lists.is_some() {
         let random_ip = generate_random_ip(ip_lists.clone());
         debug!("Build client with Random IP address: {}", random_ip);
-        build_client::build_client(url_t, &Some(random_ip), ip_lists, headers_config).await
+        build_client::build_client(url_t, &Some(random_ip), headers_config).await
     } else {
-        build_client::build_client(url_t, ip, ip_lists, headers_config).await
+        build_client::build_client(url_t, ip, headers_config).await
     }
 }
 
@@ -80,7 +79,7 @@ pub async fn run(args: Args) -> Result<()> {
 
     if args.test {
         test_request(
-            generate_client(&url_t, &args.ip, &ip_lists, &headers_config, &ip_files).await?,
+            generate_client(&url_t, &args.ip, &ip_lists, &headers_config).await?,
             url_t,
             method,
             headers,
@@ -94,8 +93,7 @@ pub async fn run(args: Args) -> Result<()> {
     for _ in 0..args.concurrent_count {
         let req = core_request::FullRequest {
             url: url.clone(),
-            client: generate_client(&url_t, &args.ip, &ip_lists, &headers_config, &ip_files)
-                .await?,
+            client: generate_client(&url_t, &args.ip, &ip_lists, &headers_config).await?,
             headers: headers.clone(),
             method: method.clone(),
             timeout,
