@@ -1,4 +1,4 @@
-use log::info;
+use log::{debug, info};
 use reqwest::{cookie::Jar, Client};
 use std::net::{IpAddr, SocketAddr};
 use std::sync::Arc;
@@ -30,7 +30,7 @@ pub async fn build_client(
     let domain = parsed_url
         .host_str()
         .ok_or(ClientBuildError::URLMissingHost)?;
-    info!("Domain: {}", domain);
+    debug!("Domain: {}", domain);
 
     let socket_addr = resolve_socket_addr(parsed_url, ip, domain).await?;
 
@@ -66,7 +66,7 @@ async fn resolve_socket_addr(
 
     match ip {
         Some(specified_ip) => {
-            info!("Using provided IP {} for domain '{}'", specified_ip, domain);
+            debug!("Using provided IP {} for domain '{}'", specified_ip, domain);
             Ok(SocketAddr::new(*specified_ip, port))
         }
         None => {
@@ -76,7 +76,7 @@ async fn resolve_socket_addr(
                 .next()
                 .ok_or(ClientBuildError::NoIpAddressesFound(domain.to_string()))?;
 
-            info!("Resolved domain '{}' to IP: {}", domain, socket_addr.ip());
+            debug!("Resolved domain '{}' to IP: {}", domain, socket_addr.ip());
             Ok(SocketAddr::new(socket_addr.ip(), port))
         }
     }
