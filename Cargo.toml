@@ -1,6 +1,6 @@
 [package]
 name = "layer7benchmark"
-version = "2.1.1"
+version = "2.3.10"
 edition = "2021"
 description = "A simple benchmark tool for Layer 7 (HTTP) load testing"
 license = "MIT"
