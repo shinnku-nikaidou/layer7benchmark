@@ -1,4 +1,6 @@
+use anyhow::Result;
 use log::{debug, info};
+use rand::Rng;
 use reqwest::{cookie::Jar, Client};
 use std::net::{IpAddr, SocketAddr};
 use std::sync::Arc;
@@ -20,6 +22,46 @@ pub enum ClientBuildError {
 
     #[error("No IP addresses found for domain {0}")]
     NoIpAddressesFound(String),
+}
+
+pub fn generate_ip_list(ip_lists: &String) -> Result<Vec<std::net::IpAddr>> {
+    let mut ip_list = Vec::new();
+    let file_text = std::fs::read_to_string(ip_lists)
+        .map_err(|e| anyhow::anyhow!("Failed to read IP list file: {}", e))?;
+    for line in file_text.lines() {
+        let ip = line.trim();
+        if !ip.is_empty() {
+            let ip_addr = ip
+                .parse::<std::net::IpAddr>()
+                .map_err(|e| anyhow::anyhow!("Failed to parse IP address: {}", e))?;
+            info!("Get new IP address: {}", ip_addr);
+            ip_list.push(ip_addr);
+        }
+    }
+    Ok(ip_list)
+}
+
+pub async fn generate_clients(
+    url_t: &reqwest::Url,
+    ip: &Option<std::net::IpAddr>,
+    ip_lists: &Option<Vec<std::net::IpAddr>>,
+    headers_config: &HeadersConfig,
+) -> Result<Vec<Client>, ClientBuildError> {
+    let mut clients = Vec::new();
+    if ip_lists.is_some() {
+        for ip in ip_lists.clone().unwrap() {
+            debug!("Build client with IP address: {}", ip);
+            clients.push(build_client(url_t, &Some(ip), headers_config).await?);
+        }
+    } else {
+        clients.push(build_client(url_t, ip, headers_config).await?);
+    }
+    Ok(clients)
+}
+
+pub async fn generate_client(clients: &Vec<Client>) -> Result<Client, ClientBuildError> {
+    let random_index = rand::rng().random_range(0..clients.len());
+    Ok(clients[random_index].clone())
 }
 
 pub async fn build_client(
@@ -66,7 +108,7 @@ async fn resolve_socket_addr(
 
     match ip {
         Some(specified_ip) => {
-            debug!("Using provided IP {} for domain '{}'", specified_ip, domain);
+            info!("Using provided IP {} for domain '{}'", specified_ip, domain);
             Ok(SocketAddr::new(*specified_ip, port))
         }
         None => {
@@ -76,7 +118,7 @@ async fn resolve_socket_addr(
                 .next()
                 .ok_or(ClientBuildError::NoIpAddressesFound(domain.to_string()))?;
 
-            debug!("Resolved domain '{}' to IP: {}", domain, socket_addr.ip());
+            info!("Resolved domain '{}' to IP: {}", domain, socket_addr.ip());
             Ok(SocketAddr::new(socket_addr.ip(), port))
         }
     }

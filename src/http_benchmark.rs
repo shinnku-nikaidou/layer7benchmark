@@ -1,54 +1,14 @@
-use crate::args::Args;
-use crate::build_client::ClientBuildError;
-use crate::core_request;
-use crate::parse_header::HeadersConfig;
-use crate::{build_client, shutdown, terminal};
-use anyhow::Result;
-use log::{debug, info};
-use rand::Rng;
-use reqwest::Client;
 use std::time::Duration;
+
+use crate::args::Args;
+use crate::parse_header::HeadersConfig;
+use crate::{build_client, core_request};
+use crate::{shutdown, terminal};
+use anyhow::Result;
+use log::info;
+
 use tokio::sync::watch;
 use tokio::task::JoinSet;
-
-fn generate_ip_list(ip_lists: &String) -> Result<Vec<std::net::IpAddr>> {
-    let mut ip_list = Vec::new();
-    let file_text = std::fs::read_to_string(ip_lists)
-        .map_err(|e| anyhow::anyhow!("Failed to read IP list file: {}", e))?;
-    for line in file_text.lines() {
-        let ip = line.trim();
-        if !ip.is_empty() {
-            let ip_addr = ip
-                .parse::<std::net::IpAddr>()
-                .map_err(|e| anyhow::anyhow!("Failed to parse IP address: {}", e))?;
-            info!("Get new IP address: {}", ip_addr);
-            ip_list.push(ip_addr);
-        }
-    }
-    Ok(ip_list)
-}
-
-async fn generate_client(
-    url_t: &reqwest::Url,
-    ip: &Option<std::net::IpAddr>,
-    ip_lists: &Option<Vec<std::net::IpAddr>>,
-    headers_config: &HeadersConfig,
-) -> Result<Client, ClientBuildError> {
-    if ip_lists.is_some() {
-        let random_ip = generate_random_ip(ip_lists.clone());
-        debug!("Build client with Random IP address: {}", random_ip);
-        build_client::build_client(url_t, &Some(random_ip), headers_config).await
-    } else {
-        build_client::build_client(url_t, ip, headers_config).await
-    }
-}
-
-fn generate_random_ip(ip_lists: Option<Vec<std::net::IpAddr>>) -> std::net::IpAddr {
-    let ip_lists = ip_lists.expect("IP list should not be None here");
-    let mut rng = rand::rng();
-    let random_index = rng.random_range(0..ip_lists.len());
-    ip_lists[random_index]
-}
 
 pub async fn run(args: Args) -> Result<()> {
     let Args {
@@ -61,7 +21,7 @@ pub async fn run(args: Args) -> Result<()> {
 
     let mut ip_lists = None;
     if !ip_files.is_empty() {
-        ip_lists = Some(generate_ip_list(&ip_files)?);
+        ip_lists = Some(build_client::generate_ip_list(&ip_files)?);
     }
 
     let mut handles = JoinSet::new();
@@ -76,10 +36,12 @@ pub async fn run(args: Args) -> Result<()> {
         reqwest::Url::parse(&url).map_err(|e| anyhow::anyhow!("Failed to parse URL: {}", e))?;
 
     let headers = headers_config.other_headers.clone();
+    let clients =
+        build_client::generate_clients(&url_t, &args.ip, &ip_lists, &headers_config).await?;
 
     if args.test {
         test_request(
-            generate_client(&url_t, &args.ip, &ip_lists, &headers_config).await?,
+            build_client::generate_client(&clients).await?,
             url_t,
             method,
             headers,
@@ -93,7 +55,7 @@ pub async fn run(args: Args) -> Result<()> {
     for _ in 0..args.concurrent_count {
         let req = core_request::FullRequest {
             url: url.clone(),
-            client: generate_client(&url_t, &args.ip, &ip_lists, &headers_config).await?,
+            client: build_client::generate_client(&clients).await?,
             headers: headers.clone(),
             method: method.clone(),
             timeout,
