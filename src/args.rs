@@ -66,6 +66,9 @@ pub struct Args {
     #[arg(long = "normal-output", default_value_t = false)]
     pub normal_output: bool,
 
+    #[arg(long = "ip-files", default_value = "")]
+    pub ip_files: String,
+
     // if this option is set, the program will be a slave and connect to the master server
     // this program will use websocket to connect to the master server
     // and master server will send the order back to the slave

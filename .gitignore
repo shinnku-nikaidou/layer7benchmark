@@ -3,5 +3,6 @@ tmp*
 
 # IntelliJ IDEA
 .idea/
+ip.txt
 
 .DS_Store

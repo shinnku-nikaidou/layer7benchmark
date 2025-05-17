@@ -25,6 +25,7 @@ pub enum ClientBuildError {
 pub async fn build_client(
     parsed_url: &Url,
     ip: &Option<IpAddr>,
+    ip_lists: &Option<Vec<IpAddr>>,
     headers_config: &HeadersConfig,
 ) -> Result<Client, ClientBuildError> {
     let domain = parsed_url
