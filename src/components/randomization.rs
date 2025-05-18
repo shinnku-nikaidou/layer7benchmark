@@ -7,7 +7,7 @@ enum Part {
     RandomChars { chars: Vec<char>, count: usize },
 }
 
-pub fn make_template_generator(template: &str) -> impl Fn() -> String  + use<> {
+pub fn template_generator(template: &str) -> impl Fn() -> String + use<> {
     let re = Regex::new(r"\[([^\]]+)\](?:\{(\d+)\})?").unwrap();
 
     let mut parts: Vec<Part> = Vec::new();
@@ -71,7 +71,7 @@ mod tests {
     #[test]
     fn test() {
         let generator =
-            make_template_generator("https://shinnku.com/?x=[0-9]&y=[a-zA-Z]{2}&z=[a-zA-Z0-9]");
+            template_generator("https://shinnku.com/?x=[0-9]&y=[a-zA-Z]{2}&z=[a-zA-Z0-9]");
         for _ in 0..14 {
             println!("{}", generator());
         }
@@ -79,8 +79,7 @@ mod tests {
 
     #[test]
     fn test2() {
-        let generator =
-            make_template_generator("https://shinnku.com/?x=[a-zA-Z0-9]{10}&y=[a-zA-Z]{2}");
+        let generator = template_generator("https://shinnku.com/?x=[a-zA-Z0-9]{10}&y=[a-zA-Z]{2}");
         for _ in 0..30 {
             println!("{}", generator());
         }
@@ -88,8 +87,7 @@ mod tests {
 
     #[test]
     fn test3() {
-        let generator =
-            make_template_generator("https://shinnku.com/[a-zA-Z0-9]{10}");
+        let generator = template_generator("https://shinnku.com/[a-zA-Z0-9]{10}");
         for _ in 0..30 {
             println!("{}", generator());
         }

@@ -20,9 +20,9 @@ pub struct FullRequest {
 }
 
 impl FullRequest {
-    fn get_url(&self, generator: &Option<impl Fn() -> String>) -> Result<Url> {
+    fn generate_url(&self, url_generator: &Option<impl Fn() -> String>) -> Result<Url> {
         if self.random {
-            let generator = generator
+            let generator = url_generator
                 .as_ref()
                 .context("Random generator not initialized")?;
             let random_url = generator();
@@ -33,11 +33,11 @@ impl FullRequest {
         }
     }
 
-    fn build_request(
+    fn create_builder(
         &self,
         generator: &Option<impl Fn() -> String>,
     ) -> Result<reqwest::RequestBuilder> {
-        let url = self.get_url(generator)?;
+        let url = self.generate_url(generator)?;
         let request = self
             .client
             .request(self.method.clone(), url)
@@ -70,11 +70,11 @@ pub async fn send_requests(req: FullRequest, mut shutdown: watch::Receiver<bool>
     let network_traffics = &s.network_traffics;
     let generator = req.random.then({
         let template = req.url.to_string();
-        move || crate::components::randomization::make_template_generator(&template)
+        move || crate::components::randomization::template_generator(&template)
     });
 
     loop {
-        let request_builder = req.build_request(&generator).unwrap();
+        let request_builder = req.create_builder(&generator).unwrap();
 
         tokio::select! {
             biased;

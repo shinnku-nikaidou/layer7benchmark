@@ -18,7 +18,7 @@ pub async fn run(args: Args) -> Result<()> {
 
     let mut ip_lists = None;
     if !ip_files.is_empty() {
-        ip_lists = Some(client::generate_ip_list(&ip_files)?);
+        ip_lists = Some(client::read_ip_list(&ip_files)?);
     }
 
     let mut handles = JoinSet::new();
@@ -29,12 +29,17 @@ pub async fn run(args: Args) -> Result<()> {
     info!("Method is: {}", method);
     headers_config.log_detail();
 
-    // url_t is only for get the ip address from the host, not for the request.
+    // url_t is only for getting the ip address from the host, not for sending the request.
     let url_t =
         reqwest::Url::parse(&url).map_err(|e| anyhow::anyhow!("Failed to parse URL: {}", e))?;
 
     let headers = headers_config.other_headers.clone();
-    let clients = client::generate_clients(&url_t, &args.ip, &ip_lists, &headers_config).await?;
+
+    // Why need clients, why not client
+    // The client will pre compile DNS result into client so that no more redundant ip lookup.
+    // And the user may provide multiple ip through --ip-files, it need multiple clients.
+    // if user don't provide --ip-files, then `assert_eq!(clients.lens(), 1)` will hold.
+    let clients: Vec<reqwest::Client> = client::build(&url_t, &args.ip, &ip_lists, &headers_config).await?;
 
     if args.test {
         test_request(

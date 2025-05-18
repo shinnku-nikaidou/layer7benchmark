@@ -24,7 +24,7 @@ pub enum ClientBuildError {
     NoIpAddressesFound(String),
 }
 
-pub fn generate_ip_list(ip_lists: &String) -> Result<Vec<std::net::IpAddr>> {
+pub fn read_ip_list(ip_lists: &String) -> Result<Vec<std::net::IpAddr>> {
     let mut ip_list = Vec::new();
     let file_text = std::fs::read_to_string(ip_lists)
         .map_err(|e| anyhow::anyhow!("Failed to read IP list file: {}", e))?;
@@ -41,7 +41,7 @@ pub fn generate_ip_list(ip_lists: &String) -> Result<Vec<std::net::IpAddr>> {
     Ok(ip_list)
 }
 
-pub async fn generate_clients(
+pub async fn build(
     url_t: &reqwest::Url,
     ip: &Option<std::net::IpAddr>,
     ip_lists: &Option<Vec<std::net::IpAddr>>,
