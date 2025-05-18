@@ -3,7 +3,7 @@ use super::header::HeadersConfig;
 use anyhow::Result;
 use log::{debug, info};
 use rand::Rng;
-use reqwest::{cookie::Jar, Client};
+use reqwest::{Client, cookie::Jar};
 use std::net::{IpAddr, SocketAddr};
 use std::sync::Arc;
 use tokio::net::lookup_host;
@@ -24,7 +24,7 @@ pub enum ClientBuildError {
     NoIpAddressesFound(String),
 }
 
-pub fn read_ip_list(ip_lists: &String) -> Result<Vec<std::net::IpAddr>> {
+pub fn read_ip_files(ip_lists: &String) -> Result<Vec<std::net::IpAddr>> {
     let mut ip_list = Vec::new();
     let file_text = std::fs::read_to_string(ip_lists)
         .map_err(|e| anyhow::anyhow!("Failed to read IP list file: {}", e))?;
@@ -64,47 +64,43 @@ pub async fn generate_client(clients: &Vec<Client>) -> Result<Client, ClientBuil
     Ok(clients[random_index].clone())
 }
 
-pub async fn build_client(
-    parsed_url: &Url,
+async fn build_client(
+    url: &Url,
     ip: &Option<IpAddr>,
-    headers_config: &HeadersConfig,
+    config: &HeadersConfig,
 ) -> Result<Client, ClientBuildError> {
-    let domain = parsed_url
-        .host_str()
-        .ok_or(ClientBuildError::URLMissingHost)?;
-    debug!("Domain: {}", domain);
-
-    let socket_addr = resolve_socket_addr(parsed_url, ip, domain).await?;
+    let domain = url.host_str().ok_or(ClientBuildError::URLMissingHost)?;
+    let socket_addr = resolve_socket_addr(url, ip, domain).await?;
 
     let client_builder = Client::builder()
         .resolve(domain, socket_addr)
         .use_native_tls()
-        .gzip(headers_config.gzip)
-        .deflate(headers_config.deflate);
+        .gzip(config.gzip)
+        .deflate(config.deflate);
 
-    let client_builder = if let Some(user_agent) = &headers_config.user_agent {
+    let client_builder = if let Some(user_agent) = &config.user_agent {
         client_builder.user_agent(user_agent)
     } else {
         client_builder
     };
 
-    let client_builder = if let Some(cookie) = &headers_config.cookie {
+    let client_builder = if let Some(cookie) = &config.cookie {
         let jar = Arc::new(Jar::default());
-        jar.add_cookie_str(cookie, parsed_url);
-        client_builder.cookie_provider(jar)
+        jar.add_cookie_str(cookie, url);
+        client_builder.cookie_provider(jar).cookie_store(true)
     } else {
-        client_builder
+        client_builder.cookie_store(false)
     };
 
     Ok(client_builder.build()?)
 }
 
 async fn resolve_socket_addr(
-    parsed_url: &Url,
+    url: &Url,
     ip: &Option<IpAddr>,
     domain: &str,
 ) -> Result<SocketAddr, ClientBuildError> {
-    let port = parsed_url.port_or_known_default().unwrap_or(0);
+    let port = url.port_or_known_default().unwrap_or(0);
 
     match ip {
         Some(specified_ip) => {

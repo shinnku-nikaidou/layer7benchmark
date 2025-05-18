@@ -16,10 +16,11 @@ pub async fn run(args: Args) -> Result<()> {
         ..
     } = args;
 
-    let mut ip_lists = None;
-    if !ip_files.is_empty() {
-        ip_lists = Some(client::read_ip_list(&ip_files)?);
-    }
+    let ip_lists = if !ip_files.is_empty() {
+        Some(client::read_ip_files(&ip_files)?)
+    } else {
+        None
+    };
 
     let mut handles = JoinSet::new();
     let timeout = Duration::from_secs(args.timeout);
@@ -36,10 +37,11 @@ pub async fn run(args: Args) -> Result<()> {
     let headers = headers_config.other_headers.clone();
 
     // Why need clients, why not client
-    // The client will pre compile DNS result into client so that no more redundant ip lookup.
-    // And the user may provide multiple ip through --ip-files, it need multiple clients.
-    // if user don't provide --ip-files, then `assert_eq!(clients.lens(), 1)` will hold.
-    let clients: Vec<reqwest::Client> = client::build(&url_t, &args.ip, &ip_lists, &headers_config).await?;
+    // The client will pre compile DNS result into itself so that no more redundant ip lookup.
+    // And the user may provide multiple ip through --ip-files, it needs multiple clients.
+    // if the user don't provide --ip-files, then `assert_eq!(clients.len(), 1)` will hold.
+    let clients: Vec<reqwest::Client> =
+        client::build(&url_t, &args.ip, &ip_lists, &headers_config).await?;
 
     if args.test {
         test_request(
