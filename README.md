@@ -59,6 +59,11 @@ So it is extremely fast and efficient. Much lower CPU usage than other tools lik
     If you want to use this option, please make sure you understand the grammar of the URL you set.
     This option can be combined with the --test option. And the --test option will only send one request to a randomly generated URL, also the --test option will print the URL which is randomly generated.
     Full grammar is down below and you can keep reading the following text.
+--ip-files
+    Some times a website will have multiple IP addresses when using a CDN or load balancing.
+    You can use this option to specify a file containing a list of IP addresses, one per line.
+    The program will randomly select one of the IP addresses from the file for each request.
+    This option conflicts with the --ip option.  And please provide valid file path, and the contents of the file must be valid IP addresses' list.
 ```
 
 ### Example
@@ -107,12 +112,11 @@ https://www.example.com/364
 
 https://www.example.com/random/path?foo=[a-z0-9]&bar=[a-zA-Z]{3}
 # will generate a random URL like
-https://www.example.com/random/path?foo=1&bar=MPL 
+https://www.example.com/random/path?foo=1&bar=MPL
 https://www.example.com/random/path?foo=2&bar=deD
 https://www.example.com/random/path?foo=a&bar=gHi
 
 ```
-
 
 ## 中文说明
 
