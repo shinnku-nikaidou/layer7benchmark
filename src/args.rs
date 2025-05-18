@@ -1,8 +1,9 @@
 use std::net::IpAddr;
 
-use crate::header::HeadersPair;
 use clap::Parser;
 use reqwest::Method;
+
+use crate::components::header::HeadersPair;
 
 #[derive(Parser, Debug)]
 #[command(version)]

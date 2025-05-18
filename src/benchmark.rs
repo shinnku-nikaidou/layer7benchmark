@@ -1,12 +1,10 @@
-use std::time::Duration;
-
 use crate::args::Args;
-use crate::header::HeadersConfig;
-use crate::{request, lib::client};
-use crate::{shutdown, output};
+use crate::components::{client, header::HeadersConfig, request};
+use crate::{output, shutdown};
+
 use anyhow::Result;
 use log::info;
-
+use std::time::Duration;
 use tokio::sync::watch;
 use tokio::task::JoinSet;
 
@@ -68,10 +66,7 @@ pub async fn run(args: Args) -> Result<()> {
     if args.normal_output {
         tokio::spawn(output::normal_output(method.clone(), shutdown_rx.clone()));
     } else {
-        tokio::spawn(output::terminal_output(
-            method.clone(),
-            shutdown_rx.clone(),
-        ));
+        tokio::spawn(output::terminal_output(method.clone(), shutdown_rx.clone()));
     }
 
     tokio::spawn(shutdown::handle_shutdown_signals(shutdown_tx.clone()));

@@ -1,12 +1,10 @@
 mod args;
-mod request;
 mod benchmark;
-mod lib;
-mod header;
+mod output;
+mod components;
 mod server;
 mod shutdown;
 mod statistic;
-mod output;
 
 use args::Args;
 use clap::Parser;

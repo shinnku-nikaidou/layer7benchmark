@@ -1,3 +1,5 @@
+use super::header::HeadersConfig;
+
 use anyhow::Result;
 use log::{debug, info};
 use rand::Rng;
@@ -6,8 +8,6 @@ use std::net::{IpAddr, SocketAddr};
 use std::sync::Arc;
 use tokio::net::lookup_host;
 use url::Url;
-
-use crate::header::HeadersConfig;
 
 #[derive(thiserror::Error, Debug)]
 pub enum ClientBuildError {
