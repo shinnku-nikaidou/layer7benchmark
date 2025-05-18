@@ -1,6 +1,5 @@
 use crate::args::Args;
-use crate::components::{client, header::HeadersConfig, request};
-use crate::{output, shutdown};
+use crate::components::{client, header::HeadersConfig, output, request, shutdown};
 
 use anyhow::Result;
 use log::info;
