@@ -22,10 +22,10 @@ pub struct FullRequest {
 impl FullRequest {
     fn get_url(&self, generator: &Option<impl Fn() -> String>) -> Result<Url> {
         if self.random {
-            let gen = generator
+            let generator = generator
                 .as_ref()
                 .context("Random generator not initialized")?;
-            let random_url = gen();
+            let random_url = generator();
             debug!("Random URL generated: {}", random_url);
             Url::parse(&random_url).context("Failed to parse random URL")
         } else {
@@ -68,9 +68,9 @@ pub async fn send_requests(req: FullRequest, mut shutdown: watch::Receiver<bool>
     let counter = &s.request_counter;
     let sc = &s.status_counter;
     let network_traffics = &s.network_traffics;
-    let generator = req.random.then(|| {
+    let generator = req.random.then({
         let template = req.url.to_string();
-        crate::components::randomization::make_template_generator(&template)
+        move || crate::components::randomization::make_template_generator(&template)
     });
 
     loop {

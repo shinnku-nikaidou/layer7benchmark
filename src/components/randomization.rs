@@ -7,7 +7,7 @@ enum Part {
     RandomChars { chars: Vec<char>, count: usize },
 }
 
-pub fn make_template_generator(template: &str) -> impl Fn() -> String {
+pub fn make_template_generator(template: &str) -> impl Fn() -> String  + use<> {
     let re = Regex::new(r"\[([^\]]+)\](?:\{(\d+)\})?").unwrap();
 
     let mut parts: Vec<Part> = Vec::new();

@@ -15,11 +15,11 @@ fn main() {
     let args = Args::parse();
     let _ = statistic::STATISTIC.set(statistic::Statistic::default());
     if std::env::var_os("RUST_LOG").is_none() {
-        std::env::set_var("RUST_LOG", DEFAULT_LOG_LEVEL);
+        unsafe { std::env::set_var("RUST_LOG", DEFAULT_LOG_LEVEL) };
     }
 
     if args.log_level != DEFAULT_LOG_LEVEL {
-        std::env::set_var("RUST_LOG", args.log_level.as_str());
+        unsafe { std::env::set_var("RUST_LOG", args.log_level.as_str()) };
     }
 
     env_logger::init();

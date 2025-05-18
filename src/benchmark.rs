@@ -29,6 +29,7 @@ pub async fn run(args: Args) -> Result<()> {
     info!("Method is: {}", method);
     headers_config.log_detail();
 
+    // url_t is only for get the ip address from the host, not for the request.
     let url_t =
         reqwest::Url::parse(&url).map_err(|e| anyhow::anyhow!("Failed to parse URL: {}", e))?;
 
