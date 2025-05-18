@@ -1,13 +1,12 @@
 mod args;
-mod build_client;
-mod core_request;
-mod http_benchmark;
-mod parse_header;
-mod randomization;
+mod request;
+mod benchmark;
+mod lib;
+mod header;
 mod server;
 mod shutdown;
 mod statistic;
-mod terminal;
+mod output;
 
 use args::Args;
 use clap::Parser;
@@ -32,7 +31,7 @@ fn main() {
     let runtime = Runtime::new().expect("Could not build the tokio runtime");
 
     let result = if args.server.is_empty() {
-        runtime.block_on(http_benchmark::run(args))
+        runtime.block_on(benchmark::run(args))
     } else {
         runtime.block_on(server::connect_to_server())
     };

@@ -1,9 +1,9 @@
 use std::time::Duration;
 
 use crate::args::Args;
-use crate::parse_header::HeadersConfig;
-use crate::{build_client, core_request};
-use crate::{shutdown, terminal};
+use crate::header::HeadersConfig;
+use crate::{request, lib::client};
+use crate::{shutdown, output};
 use anyhow::Result;
 use log::info;
 
@@ -21,7 +21,7 @@ pub async fn run(args: Args) -> Result<()> {
 
     let mut ip_lists = None;
     if !ip_files.is_empty() {
-        ip_lists = Some(build_client::generate_ip_list(&ip_files)?);
+        ip_lists = Some(client::generate_ip_list(&ip_files)?);
     }
 
     let mut handles = JoinSet::new();
@@ -36,12 +36,11 @@ pub async fn run(args: Args) -> Result<()> {
         reqwest::Url::parse(&url).map_err(|e| anyhow::anyhow!("Failed to parse URL: {}", e))?;
 
     let headers = headers_config.other_headers.clone();
-    let clients =
-        build_client::generate_clients(&url_t, &args.ip, &ip_lists, &headers_config).await?;
+    let clients = client::generate_clients(&url_t, &args.ip, &ip_lists, &headers_config).await?;
 
     if args.test {
         test_request(
-            build_client::generate_client(&clients).await?,
+            client::generate_client(&clients).await?,
             url_t,
             method,
             headers,
@@ -53,23 +52,23 @@ pub async fn run(args: Args) -> Result<()> {
     let (shutdown_tx, shutdown_rx) = watch::channel(false);
 
     for _ in 0..args.concurrent_count {
-        let req = core_request::FullRequest {
+        let req = request::FullRequest {
             url: url.clone(),
-            client: build_client::generate_client(&clients).await?,
+            client: client::generate_client(&clients).await?,
             headers: headers.clone(),
             method: method.clone(),
             timeout,
             random,
             body: (!args.body.is_empty()).then(|| args.body.clone()),
         };
-        let handle = tokio::spawn(core_request::send_requests(req, shutdown_rx.clone()));
+        let handle = tokio::spawn(request::send_requests(req, shutdown_rx.clone()));
         handles.spawn(handle);
     }
 
     if args.normal_output {
-        tokio::spawn(terminal::normal_output(method.clone(), shutdown_rx.clone()));
+        tokio::spawn(output::normal_output(method.clone(), shutdown_rx.clone()));
     } else {
-        tokio::spawn(terminal::terminal_output(
+        tokio::spawn(output::terminal_output(
             method.clone(),
             shutdown_rx.clone(),
         ));

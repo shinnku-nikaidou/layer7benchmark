@@ -70,7 +70,7 @@ pub async fn send_requests(req: FullRequest, mut shutdown: watch::Receiver<bool>
     let network_traffics = &s.network_traffics;
     let generator = req.random.then(|| {
         let template = req.url.to_string();
-        crate::randomization::make_template_generator(&template)
+        crate::lib::randomization::make_template_generator(&template)
     });
 
     loop {

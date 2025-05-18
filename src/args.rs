@@ -1,6 +1,6 @@
 use std::net::IpAddr;
 
-use crate::parse_header::HeadersPair;
+use crate::header::HeadersPair;
 use clap::Parser;
 use reqwest::Method;
 

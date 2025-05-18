@@ -7,7 +7,7 @@ use std::sync::Arc;
 use tokio::net::lookup_host;
 use url::Url;
 
-use crate::parse_header::HeadersConfig;
+use crate::header::HeadersConfig;
 
 #[derive(thiserror::Error, Debug)]
 pub enum ClientBuildError {
