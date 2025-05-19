@@ -1,0 +1,68 @@
+syntax = "proto3";
+
+package l7b.nodes;
+
+import "heartbeat.proto";
+import "commands.proto";
+
+message NodeInfo {
+  int64 id = 1;
+  optional string name = 2;
+  string ip = 3;
+  int64 last_active_at = 4;
+  heartbeat.ClientStatus status = 5;
+  optional int64 executing_command = 6;
+  optional int64 execute_next = 7;
+}
+
+message ListNodesRequest {
+  repeated int64 filter_command_id = 1;
+  optional int64 filter_executed_by = 2;
+  optional heartbeat.ClientStatus filter_status = 3;
+  string jwt = 4;
+}
+
+message ListNodesResponse {
+  repeated NodeInfo nodes = 1;
+}
+
+message ListCommandsRequest {
+  string jwt = 1;
+}
+
+message ListCommandsResponse {
+  repeated commands.ExecuteGroup commands = 1;
+}
+
+message ConnectToNodeOutputReq {
+  int64 node_id = 1;
+  string jwt = 2;
+}
+
+message CreateCommandsRequest {
+  repeated l7b.commands.ExecuteGroup execute_groups = 1;
+  string jwt = 2;
+}
+
+message CreateCommandsResponse {
+  int64 id = 1;
+}
+
+message ExecuteCommandRequest {
+  int64 command_id = 1;
+  repeated int64 node_ids = 2;
+  string jwt = 3;
+}
+
+message ExecuteCommandResponse {
+  int64 success = 1;
+  int64 failed = 2;
+}
+
+service NodeService {
+  rpc CreateCommands(CreateCommandsRequest) returns (CreateCommandsResponse) {}
+  rpc ExecuteCommand(ExecuteCommandRequest) returns (ExecuteCommandResponse) {}
+  rpc ListCommands(ListCommandsRequest) returns (ListCommandsResponse) {}
+  rpc ListNodes(ListNodesRequest) returns (ListNodesResponse) {}
+  rpc ConnectToNodeOutput(ConnectToNodeOutputReq) returns (stream l7b.commands.CommandResultItem) {}
+}

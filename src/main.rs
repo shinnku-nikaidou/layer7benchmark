@@ -26,10 +26,10 @@ fn main() {
     info!("l7_flood started");
     let runtime = Runtime::new().expect("Could not build the tokio runtime");
 
-    let result = if args.server.is_empty() {
-        runtime.block_on(benchmark::run(args))
+    let result = if let Some(server_url) = args.server {
+        runtime.block_on(server::connect_to_server(server_url))
     } else {
-        runtime.block_on(server::connect_to_server())
+        runtime.block_on(benchmark::run(args))
     };
 
     match result {

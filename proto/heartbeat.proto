@@ -1,0 +1,54 @@
+syntax = "proto3";
+
+import "commands.proto";
+
+package l7b.heartbeat;
+
+/**
+ * A Heartbeat message from client to server.
+ */
+message HeartBeat {
+  // The timestamp of the client.
+  uint64 timestamp = 1;
+
+  // The status of the client.
+  ClientStatus status = 2;
+  
+  optional uint64 current_command_id = 3;
+
+  // The result of the command.
+  repeated l7b.commands.CommandResultItem command_result = 4;
+  
+  string ip = 5;
+}
+
+/**
+ * The status of the client.
+ */
+enum ClientStatus {
+  // The client is idle.
+  CLIENT_STATUS_IDLE = 0;
+
+  // The client is preparing to send requests.
+  CLIENT_STATUS_REQUEST_PREPARING = 1;
+
+  // The client is sending requests.
+  CLIENT_STATUS_REQUESTING = 11;
+}
+
+message Empty {}
+
+message ServerResponse {
+  uint64 server_timestamp = 1;
+  oneof next_operation {
+    Empty keep_idle = 3;
+    Empty continue_current = 4;
+    Empty stop_current = 5;
+    commands.ExecuteGroup stop_and_execute = 6;
+    commands.ExecuteGroup execute = 7;
+  }
+}
+
+service HeartbeatService {
+  rpc Heartbeat(HeartBeat) returns (ServerResponse) {}
+}

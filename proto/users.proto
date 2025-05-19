@@ -1,0 +1,62 @@
+syntax = "proto3";
+
+package l7b.users;
+
+import "heartbeat.proto";
+import "commands.proto";
+
+message User {
+  int64 id = 1;
+  string username = 2;
+  string password = 3;
+}
+
+message LoginRequest {
+  string username = 1;
+  string password = 2;
+}
+
+message LoginResponse {
+  int64 id = 1;
+  string token = 2;
+}
+
+message CreateUserRequest {
+  string username = 1;
+  string password = 2;
+  string jwt = 3;
+}
+
+message UserEditResponse {
+  int64 id = 1;
+}
+
+message EditUserPasswordRequest {
+  int64 id = 1;
+  string password = 2;
+  string jwt = 3;
+}
+
+message CommandHistoryItem {
+  int64 id = 1;
+  int64 command_id = 2;
+  int64 executed_by = 3;
+  int64 executed_at = 4;
+  repeated int64 nodes = 5;
+}
+
+message FindUserCommandHistoryRequest {
+  int64 user_id = 1;
+  string jwt = 2;
+}
+
+message FindUserCommandHistoryResponse {
+  repeated CommandHistoryItem items = 1;
+}
+
+service UserService {
+  rpc Login(LoginRequest) returns (LoginResponse) {}
+  rpc CreateUser(CreateUserRequest) returns (UserEditResponse) {}
+  rpc EditUserPassword(EditUserPasswordRequest) returns (UserEditResponse) {}
+  rpc FindUserCommandHistory(FindUserCommandHistoryRequest) returns (FindUserCommandHistoryResponse) {}
+}

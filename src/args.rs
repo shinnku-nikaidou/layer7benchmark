@@ -2,7 +2,7 @@ use std::net::IpAddr;
 use std::path::PathBuf;
 use clap::Parser;
 use reqwest::Method;
-
+use url::Url;
 use crate::components::header::HeadersPair;
 
 #[derive(Parser, Debug)]
@@ -73,6 +73,6 @@ pub struct Args {
     // if this option is set, the program will be a slave and connect to the master server
     // this program will use websocket to connect to the master server
     // and master server will send the order back to the slave
-    #[arg(long = "server", default_value = "")]
-    pub server: String,
+    #[arg(long = "server")]
+    pub server: Option<Url>,
 }

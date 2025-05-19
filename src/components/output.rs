@@ -67,7 +67,7 @@ async fn output_statistics(
     tokio::time::sleep(Duration::from_secs(4)).await;
 
     let mut stdout = stdout();
-    write!(stdout, "\n")?;
+    writeln!(stdout)?;
     stdout.flush()?;
 
     // Only get cursor position when using terminal mode
@@ -116,7 +116,7 @@ async fn output_statistics(
             byte.get_appropriate_unit(UnitType::Decimal)
         )?;
 
-        writeln!(stdout, "")?;
+        writeln!(stdout)?;
         stdout.flush()?;
 
         // Sleep according to the specified mode

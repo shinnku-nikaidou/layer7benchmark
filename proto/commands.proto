@@ -1,0 +1,112 @@
+syntax = "proto3";
+
+package l7b.commands;
+
+/**
+ * A command from master to client that request the client to send requests.
+ */
+message RequestCommand {
+  // The concurrent count of the request.
+  uint32 concurrent_count = 1;
+  // The url to request.
+  string url = 2;
+  // The time to request. (in seconds)
+  optional uint64 time = 3;
+  // The ip to request. Optional, if not set, will use the ip resolved from the url.
+  optional string ip = 4;
+  // The headers to send.
+  repeated HttpHeader header = 5;
+  // The method to use.
+  RequestMethod method = 6;
+  // The body to send.
+  optional string body = 7;
+  // The timeout for each request. (in seconds)
+  optional uint64 timeout = 8;
+  // Enable random mode.
+  bool enable_random = 9;
+  // only send single request for testing.
+  bool single_request = 10;
+  // The time to start the request. (in UNIX timestamp). If not set, will start immediately.
+  optional uint64 start_at = 11;
+  // Abort the request if the request is not started before this time. (in UNIX timestamp)
+  optional uint64 abort_if_after = 12;
+}
+
+message HttpHeader {
+  string key = 1;
+  string value = 2;
+}
+
+enum RequestMethod {
+  REQUEST_METHOD_GET = 0;
+  REQUEST_METHOD_POST = 1;
+}
+
+message ShellCommand {
+  optional string shell = 1;
+  string command = 2;
+  optional string work_dir = 3;
+  optional uint64 timeout = 4;
+  optional uint64 start_at = 5;
+  optional uint64 abort_if_after = 6;
+}
+
+message Command {
+  oneof command {
+    RequestCommand request = 1;
+    RequestCommand single_request = 2;
+    ShellCommand shell = 3;
+  }
+}
+
+message ExecuteGroup {
+  repeated Command commands = 1;
+}
+
+/**
+ * The result of the request command.
+ */
+message RequestCommandResultItem {
+  // The count of the response code 2xx.
+  uint64 code_2 = 1;
+
+  // The count of the response code 3xx.
+  uint64 code_3 = 2;
+
+  // The count of the response code 4xx.
+  uint64 code_4 = 3;
+
+  // The count of the response code 5xx.
+  uint64 code_5 = 4;
+
+  // The count of the failure.
+  uint64 failure = 5;
+
+  uint64 timestamp = 6;
+}
+
+/**
+ * The result of the single request.
+ */
+message SingleRequestResultItem {
+  // The response code.
+  uint32 code = 1;
+
+  // The message of the response.
+  string content = 2;
+
+  uint64 timestamp = 3;
+}
+
+message ShellCommandResultItem {
+  string content = 1;
+  uint64 timestamp = 2;
+}
+
+message CommandResultItem {
+  oneof command_result {
+    RequestCommandResultItem request = 1;
+    SingleRequestResultItem single_request = 2;
+    ShellCommandResultItem shell_command = 3;
+  }
+}

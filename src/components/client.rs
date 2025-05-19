@@ -49,7 +49,6 @@ pub fn read_ip_files(ip_lists: PathBuf) -> Result<Vec<IpAddr>> {
     
     let ips: HashSet<_> = file_text
         .lines()
-        .into_iter()
         .map(|line| line.trim())
         .filter(|line| !line.is_empty())
         .filter_map(|line| IpAddr::from_str(line).ok())
@@ -82,7 +81,7 @@ pub async fn build(
     Ok(clients)
 }
 
-pub async fn generate_client(clients: &Vec<Client>) -> Result<Client, ClientBuildError> {
+pub async fn generate_client(clients: &[Client]) -> Result<Client, ClientBuildError> {
     let random_index = rand::rng().random_range(0..clients.len());
     Ok(clients[random_index].clone())
 }
