@@ -16,11 +16,10 @@ pub async fn run(args: Args) -> Result<()> {
         ..
     } = args;
 
-    let ip_lists = if !ip_files.is_empty() {
-        Some(client::read_ip_files(&ip_files)?)
-    } else {
-        None
-    };
+    let ip_lists = ip_files.map(|ip_files| {
+        client::read_ip_files(ip_files)
+    })
+        .transpose()?;
 
     let mut handles = JoinSet::new();
     let timeout = Duration::from_secs(args.timeout);

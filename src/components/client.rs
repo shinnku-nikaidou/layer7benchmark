@@ -1,3 +1,6 @@
+use std::io::Write;
+use std::collections::HashSet;
+use std::io;
 use super::header::HeadersConfig;
 
 use anyhow::Result;
@@ -5,6 +8,8 @@ use log::{debug, info};
 use rand::Rng;
 use reqwest::{Client, cookie::Jar};
 use std::net::{IpAddr, SocketAddr};
+use std::path::PathBuf;
+use std::str::FromStr;
 use std::sync::Arc;
 use tokio::net::lookup_host;
 use url::Url;
@@ -24,20 +29,38 @@ pub enum ClientBuildError {
     NoIpAddressesFound(String),
 }
 
-pub fn read_ip_files(ip_lists: &String) -> Result<Vec<std::net::IpAddr>> {
-    let mut ip_list = Vec::new();
-    let file_text = std::fs::read_to_string(ip_lists)
+fn rebuild_ip_list_file(
+    ip_list: &HashSet<IpAddr>,
+    path: &PathBuf,
+) -> io::Result<()> {
+    let mut file = std::fs::File::create(path)?;
+    let file_string = ip_list
+        .iter()
+        .map(|ip| ip.to_string())
+        .collect::<Vec<String>>()
+        .join("\n");
+    file.write_all(file_string.as_bytes())?;
+    Ok(())
+}
+
+pub fn read_ip_files(ip_lists: PathBuf) -> Result<Vec<IpAddr>> {
+    let file_text = std::fs::read_to_string(&ip_lists)
         .map_err(|e| anyhow::anyhow!("Failed to read IP list file: {}", e))?;
-    for line in file_text.lines() {
-        let ip = line.trim();
-        if !ip.is_empty() {
-            let ip_addr = ip
-                .parse::<std::net::IpAddr>()
-                .map_err(|e| anyhow::anyhow!("Failed to parse IP address: {}", e))?;
-            info!("Get new IP address: {}", ip_addr);
-            ip_list.push(ip_addr);
-        }
+    
+    let ips: HashSet<_> = file_text
+        .lines()
+        .into_iter()
+        .map(|line| line.trim())
+        .filter(|line| !line.is_empty())
+        .filter_map(|line| IpAddr::from_str(line).ok())
+        .collect();
+    
+    if ips.is_empty() {
+        return Err(anyhow::anyhow!("No valid IP addresses found in file"));
     }
+    
+    rebuild_ip_list_file(&ips, &ip_lists)?;
+    let ip_list = ips.into_iter().collect();
     Ok(ip_list)
 }
 
