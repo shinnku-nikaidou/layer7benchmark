@@ -1,5 +1,5 @@
+use crate::components::controlled_mode::server::commands;
 use std::sync::atomic::AtomicU64;
-use tokio::sync::OnceCell;
 
 #[derive(Default)]
 pub struct Statistic {
@@ -18,8 +18,8 @@ pub struct StatusCounter {
 }
 
 impl StatusCounter {
-    pub fn get_grpc(&self) -> crate::server::commands::RequestCommandResultItem {
-        crate::server::commands::RequestCommandResultItem {
+    pub fn get_grpc(&self) -> commands::RequestCommandResultItem {
+        commands::RequestCommandResultItem {
             code_2: self.status_2xx.load(std::sync::atomic::Ordering::Relaxed),
             code_3: self.status_3xx.load(std::sync::atomic::Ordering::Relaxed),
             code_4: self.status_4xx.load(std::sync::atomic::Ordering::Relaxed),
@@ -29,5 +29,3 @@ impl StatusCounter {
         }
     }
 }
-
-pub static STATISTIC: OnceCell<Statistic> = OnceCell::const_new();

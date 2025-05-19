@@ -1,16 +1,15 @@
 use byte_unit::{Byte, UnitType};
 use crossterm::{
+    ExecutableCommand,
     cursor::{self, MoveTo},
     terminal::{Clear, ClearType},
-    ExecutableCommand,
 };
+use std::sync::Arc;
 use std::{
-    io::{stdout, Write},
+    io::{Write, stdout},
     sync::atomic::Ordering,
     time::Duration,
 };
-
-use crate::statistic::STATISTIC;
 
 pub enum OutputMode {
     Terminal { refresh_rate_ms: u64 },
@@ -28,6 +27,7 @@ impl Default for OutputMode {
 pub async fn terminal_output(
     method: reqwest::Method,
     shutdown_signal: tokio::sync::watch::Receiver<bool>,
+    statistic: Arc<crate::statistic::Statistic>,
 ) -> anyhow::Result<()> {
     output_statistics(
         method,
@@ -35,6 +35,7 @@ pub async fn terminal_output(
         OutputMode::Terminal {
             refresh_rate_ms: 200,
         },
+        statistic,
     )
     .await
 }
@@ -42,6 +43,7 @@ pub async fn terminal_output(
 pub async fn normal_output(
     method: reqwest::Method,
     shutdown_signal: tokio::sync::watch::Receiver<bool>,
+    statistic: Arc<crate::statistic::Statistic>,
 ) -> anyhow::Result<()> {
     output_statistics(
         method,
@@ -49,6 +51,7 @@ pub async fn normal_output(
         OutputMode::Normal {
             refresh_rate_ms: 2000,
         },
+        statistic,
     )
     .await
 }
@@ -57,8 +60,8 @@ async fn output_statistics(
     method: reqwest::Method,
     shutdown_signal: tokio::sync::watch::Receiver<bool>,
     mode: OutputMode,
+    s: Arc<crate::statistic::Statistic>,
 ) -> anyhow::Result<()> {
-    let s = STATISTIC.get().unwrap();
     let counter = &s.request_counter;
     let sc = &s.status_counter;
     let network_traffics = &s.network_traffics;

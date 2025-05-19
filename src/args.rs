@@ -1,9 +1,9 @@
-use std::net::IpAddr;
-use std::path::PathBuf;
+use crate::components::client::header::HeadersPair;
 use clap::Parser;
 use reqwest::Method;
+use std::net::IpAddr;
+use std::path::PathBuf;
 use url::Url;
-use crate::components::client::header::HeadersPair;
 
 #[derive(Parser, Debug)]
 #[command(version)]

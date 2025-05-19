@@ -1,13 +1,13 @@
 use anyhow::{Context, Result};
 use futures_util::StreamExt;
 use log::debug;
+use std::sync::Arc;
 use std::sync::atomic::Ordering;
 use tokio::{sync::watch, time::timeout};
 
-use crate::statistic::STATISTIC;
+use crate::components::client::randomization;
 use std::time::Duration;
 use url::Url;
-use crate::components::client::randomization;
 
 #[derive(Debug, Clone)]
 pub struct FullRequest {
@@ -64,8 +64,12 @@ fn update_status_counter(status: u16, sc: &crate::statistic::StatusCounter) {
     };
 }
 
-pub async fn send_requests(req: FullRequest, mut shutdown: watch::Receiver<bool>) {
-    let s = STATISTIC.get().unwrap();
+pub async fn send_requests(
+    req: FullRequest,
+    mut shutdown: watch::Receiver<bool>,
+    statistic: Arc<crate::statistic::Statistic>,
+) {
+    let s = statistic;
     let counter = &s.request_counter;
     let sc = &s.status_counter;
     let network_traffics = &s.network_traffics;
