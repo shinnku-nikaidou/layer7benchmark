@@ -1,6 +1,7 @@
 use log::info;
 use reqwest::header::{HeaderMap, HeaderName, HeaderValue};
 use std::str::FromStr;
+use reqwest::cookie::Jar;
 
 #[derive(Debug, Clone)]
 pub struct HeadersConfig {
@@ -11,6 +12,18 @@ pub struct HeadersConfig {
     pub other_headers: HeaderMap,
 }
 
+impl Default for HeadersConfig {
+    fn default() -> Self {
+        Self {
+            user_agent: None,
+            gzip: true,
+            deflate: true,
+            cookie: None,
+            other_headers: HeaderMap::new(),
+        } 
+    }
+}
+
 impl HeadersConfig {
     pub fn log_detail(&self) {
         info!("gzip enabled: {}", self.gzip);
@@ -18,6 +31,30 @@ impl HeadersConfig {
         info!("cookie: {:?}", self.cookie);
         info!("user agent: {:?}", self.user_agent);
         info!("headers: {:?}", self.other_headers);
+    }
+    
+    pub fn get_cookie_jar(&self, url: &url::Url) -> Option<Jar> {
+        if let Some(cookie) = &self.cookie {
+            let jar = Jar::default();
+            jar.add_cookie_str(cookie, url);
+            Some(jar)
+        } else {
+            None
+        }
+    }
+    
+    pub fn set_compress_header_for_client(&self, client_builder: reqwest::ClientBuilder) -> reqwest::ClientBuilder {
+        client_builder
+            .gzip(self.gzip)
+            .deflate(self.deflate)
+    }
+    
+    pub fn set_user_agent_for_client(&self, client_builder: reqwest::ClientBuilder) -> reqwest::ClientBuilder {
+        if let Some(user_agent) = &self.user_agent {
+            client_builder.user_agent(user_agent)
+        } else {
+            client_builder
+        }
     }
 }
 

@@ -1,5 +1,4 @@
 mod args;
-mod benchmark;
 mod components;
 mod server;
 mod statistic;
@@ -8,6 +7,7 @@ use args::Args;
 use clap::Parser;
 use log::{error, info};
 use tokio::runtime::Runtime;
+use crate::components::client::benchmark;
 
 const DEFAULT_LOG_LEVEL: &str = "info";
 

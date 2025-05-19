@@ -7,6 +7,7 @@ use tokio::{sync::watch, time::timeout};
 use crate::statistic::STATISTIC;
 use std::time::Duration;
 use url::Url;
+use crate::components::client::randomization;
 
 #[derive(Debug, Clone)]
 pub struct FullRequest {
@@ -70,7 +71,7 @@ pub async fn send_requests(req: FullRequest, mut shutdown: watch::Receiver<bool>
     let network_traffics = &s.network_traffics;
     let generator = req.random.then({
         let template = req.url.to_string();
-        move || crate::components::randomization::template_generator(&template)
+        move || randomization::template_generator(&template)
     });
 
     loop {

@@ -3,7 +3,7 @@ use std::path::PathBuf;
 use clap::Parser;
 use reqwest::Method;
 use url::Url;
-use crate::components::header::HeadersPair;
+use crate::components::client::header::HeadersPair;
 
 #[derive(Parser, Debug)]
 #[command(version)]
@@ -14,7 +14,7 @@ pub struct Args {
 
     /// URL to download
     #[arg(short = 'u', long = "url", default_value = "https://www.google.com")]
-    pub url: String,
+    pub url: Url,
 
     /// Time in seconds to run the benchmark
     #[arg(short = 't', long = "time", default_value_t = 60)]
@@ -31,8 +31,8 @@ pub struct Args {
     pub header: Vec<HeadersPair>,
 
     /// Request body content
-    #[arg(long = "body", default_value = "")]
-    pub body: String,
+    #[arg(long = "body")]
+    pub body: Option<String>,
 
     /// HTTP method to use (GET, POST, PUT, DELETE, OPTIONS)
     #[arg(short = 'X', long = "method", default_value = "GET")]

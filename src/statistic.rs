@@ -17,4 +17,17 @@ pub struct StatusCounter {
     pub status_other: AtomicU64,
 }
 
+impl StatusCounter {
+    pub fn get_grpc(&self) -> crate::server::commands::RequestCommandResultItem {
+        crate::server::commands::RequestCommandResultItem {
+            code_2: self.status_2xx.load(std::sync::atomic::Ordering::Relaxed),
+            code_3: self.status_3xx.load(std::sync::atomic::Ordering::Relaxed),
+            code_4: self.status_4xx.load(std::sync::atomic::Ordering::Relaxed),
+            code_5: self.status_5xx.load(std::sync::atomic::Ordering::Relaxed),
+            failure: self.status_other.load(std::sync::atomic::Ordering::Relaxed),
+            timestamp: chrono::Utc::now().timestamp() as u64,
+        }
+    }
+}
+
 pub static STATISTIC: OnceCell<Statistic> = OnceCell::const_new();

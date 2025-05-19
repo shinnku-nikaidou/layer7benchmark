@@ -22,7 +22,7 @@ async fn get_self_ip() -> anyhow::Result<String> {
     struct IpInfoResponse {
         pub ip: String
     }
-    
+
     reqwest::get("https://ipinfo.io")
         .await?
         .json::<IpInfoResponse>()
@@ -35,7 +35,7 @@ async fn send_heartbeat(
     client: &mut HeartbeatServiceClient<Channel>,
     self_ip: &str,
     command_result: &VecDeque<CommandResultItem>,
-    client_status: &crate::components::server_command::ClientStatus,
+    client_status: &crate::components::server_command_executor::ClientStatus,
     now: NaiveDateTime
 ) -> anyhow::Result<ServerResponse> {
     let status: ClientStatus = client_status.into();
@@ -55,7 +55,7 @@ pub async fn connect_to_server(url: Url) -> anyhow::Result<()> {
     let grpc_client = HeartbeatServiceClient::connect(
         url.to_string()
     ).await?;
-    
+
     Ok(())
 }
 
