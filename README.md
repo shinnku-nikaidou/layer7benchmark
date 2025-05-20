@@ -118,6 +118,26 @@ https://www.example.com/random/path?foo=a&bar=gHi
 
 ```
 
+## Build
+
+```bash
+# only for Linux x86_64
+# install protobuf
+wget https://github.com/protocolbuffers/protobuf/releases/download/v31.0/protoc-31.0-linux-x86_64.zip
+unzip protoc-31.0-linux-x86_64.zip -d protoc31
+sudo cp protoc31/bin/protoc /usr/local/bin/
+sudo cp -r protoc31/include/* /usr/local/include/
+
+# install rust
+curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
+source $HOME/.cargo/env
+
+# build
+git clone https://github.com/shinnku-nikaidou/layer7benchmark.git
+cd layer7benchmark
+cargo build --release
+```
+
 ## 中文说明
 
 ### 简介
