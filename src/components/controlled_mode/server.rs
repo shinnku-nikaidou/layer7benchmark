@@ -96,5 +96,7 @@ pub async fn connect_to_server(url: Url) -> anyhow::Result<()> {
                 }
             }
         }
+        
+        tokio::time::sleep(std::time::Duration::from_secs(20)).await;
     }
 }
