@@ -1,18 +1,17 @@
+use crate::components::client::client_builder::{BenchmarkBuilder, ClientBuildError};
+use crate::components::client::executor::BenchmarkReady;
+use crate::components::client::request::send_requests;
 use crate::components::controlled_mode::server::commands;
+use crate::components::controlled_mode::server::commands::CommandResultItem;
 use anyhow::anyhow;
 use chrono::{DateTime, NaiveDateTime};
 use std::net::IpAddr;
 use std::sync::Arc;
-use url::Url;
-use crate::components::client::client_builder::{BenchmarkBuilder, ClientBuildError};
-use crate::components::client::executor::BenchmarkReady;
-use crate::components::client::request::send_requests;
-use crate::components::controlled_mode::server::commands::CommandResultItem;
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct RequestCommand {
     pub concurrent_count: u32,
-    pub url: Url,
+    pub url: String,
     pub time: Option<u64>,
     pub ip: Option<IpAddr>,
     pub header: Vec<HttpHeader>,
@@ -41,30 +40,32 @@ impl RequestCommand {
         let ready = self.ready().await?;
         ready.single_request().await.map_err(|e| e.into())
     }
-    
+
     pub async fn execute_multi(
-        &self, 
+        &self,
         join_set: &mut tokio::task::JoinSet<()>,
         statistic: Arc<crate::statistic::Statistic>,
         shutdown_rx: tokio::sync::watch::Receiver<bool>,
     ) -> anyhow::Result<()> {
-        let ready = self
-            .ready()
-            .await?;
+        let ready = self.ready().await?;
         let requests = ready.build_full_requests(
             self.concurrent_count,
-            self.timeout.map(std::time::Duration::from_secs).unwrap_or(std::time::Duration::from_secs(10)),
+            self.timeout
+                .map(std::time::Duration::from_secs)
+                .unwrap_or(std::time::Duration::from_secs(10)),
             self.body.clone(),
             self.enable_random,
         );
         for request in requests {
-            join_set.spawn(
-                send_requests(request, shutdown_rx.clone(), statistic.clone()),
-            );
+            join_set.spawn(send_requests(
+                request,
+                shutdown_rx.clone(),
+                statistic.clone(),
+            ));
         }
         Ok(())
     }
-    
+
     pub async fn execute(
         &self,
         join_set: &mut tokio::task::JoinSet<()>,
@@ -74,17 +75,20 @@ impl RequestCommand {
     ) -> anyhow::Result<()> {
         if self.single_request {
             let response = self.execute_single().await?;
-            output_stream.send(CommandResultItem {
-                command_result: Some(commands::command_result_item::CommandResult::SingleRequest(
-                    commands::SingleRequestResultItem {
-                        code: response.status().as_u16() as u32,
-                        content: response.text().await?,
-                        timestamp: chrono::Utc::now().timestamp() as u64,
-                    },
-                ))
-            })
-            .await
-            .map_err(|e| anyhow!("Failed to send command result: {}", e))?;
+            output_stream
+                .send(CommandResultItem {
+                    command_result: Some(
+                        commands::command_result_item::CommandResult::SingleRequest(
+                            commands::SingleRequestResultItem {
+                                code: response.status().as_u16() as u32,
+                                content: response.text().await?,
+                                timestamp: chrono::Utc::now().timestamp() as u64,
+                            },
+                        ),
+                    ),
+                })
+                .await
+                .map_err(|e| anyhow!("Failed to send command result: {}", e))?;
         } else {
             self.execute_multi(join_set, statistic, shutdown_rx).await?;
         }
@@ -131,11 +135,9 @@ impl TryFrom<commands::RequestCommand> for RequestCommand {
             None
         };
 
-        let url = Url::parse(&value.url).map_err(|e| anyhow!("Invalid URL: {}", e))?;
-        
         Ok(Self {
             concurrent_count: value.concurrent_count,
-            url,
+            url: value.url,
             time: value.time,
             ip,
             header: value.header.into_iter().map(|h| h.into()).collect(),

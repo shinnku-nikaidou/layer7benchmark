@@ -10,7 +10,6 @@ use std::path::PathBuf;
 use std::str::FromStr;
 use tokio::io::AsyncWriteExt;
 use tokio::net::lookup_host;
-use url::Url;
 
 #[derive(thiserror::Error, Debug)]
 pub enum ClientBuildError {
@@ -69,7 +68,7 @@ pub async fn read_ip_files(ip_lists: PathBuf) -> Result<Vec<IpAddr>, ClientBuild
 
 #[derive(Debug, Clone, Default)]
 pub struct BenchmarkBuilder {
-    pub url: Option<Url>,
+    pub url: Option<String>,
     pub ip_mode: ClientIpSelectMode,
     pub headers_config: HeadersConfig,
     pub method: reqwest::Method,
@@ -80,7 +79,7 @@ impl BenchmarkBuilder {
         Self::default()
     }
 
-    pub fn url(mut self, url: Url) -> Self {
+    pub fn url(mut self, url: String) -> Self {
         self.url = Some(url);
         self
     }

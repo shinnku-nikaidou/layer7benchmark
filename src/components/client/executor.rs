@@ -11,7 +11,7 @@ pub struct BenchmarkReady {
     reqwest_clients: Box<[Client]>,
     method: Method,
     headers: reqwest::header::HeaderMap,
-    url: url::Url,
+    url: String,
 }
 
 impl BenchmarkReady {
@@ -22,13 +22,20 @@ impl BenchmarkReady {
             headers_config,
             method,
         } = builder;
-        let url = url.ok_or(ClientBuildError::UrlIsRequired)?;
-        let domain = url.host_str().ok_or(ClientBuildError::URLMissingHost)?;
+
+        let url_t = url
+            .clone()
+            .unwrap()
+            .parse::<url::Url>()
+            .map_err(|e| anyhow::anyhow!("Failed to parse URL: {:?}. Error: {}", url, e))
+            .unwrap();
+
+        let domain = url_t.host_str().ok_or(ClientBuildError::URLMissingHost)?;
         let ip = ip_mode.resolve(domain).await?;
-        let port = url.port_or_known_default().unwrap_or(443);
+        let port = url_t.port_or_known_default().unwrap_or(0);
 
         let socket_addrs: Box<[_]> = ip.into_iter().map(|ip| SocketAddr::new(ip, port)).collect();
-        let cookie_jar = headers_config.get_cookie_jar(&url).map(Arc::new);
+        let cookie_jar = headers_config.get_cookie_jar(&url_t).map(Arc::new);
         let reqwest_clients = socket_addrs
             .into_iter()
             .map(|socket_addr| {
@@ -59,7 +66,7 @@ impl BenchmarkReady {
             reqwest_clients,
             method,
             headers,
-            url,
+            url: url.unwrap(),
         })
     }
 

@@ -74,7 +74,7 @@ pub async fn send_requests(
     let sc = &s.status_counter;
     let network_traffics = &s.network_traffics;
     let generator = req.random.then({
-        let template = req.url.to_string();
+        let template = req.url.clone();
         move || randomization::template_generator(&template)
     });
 
