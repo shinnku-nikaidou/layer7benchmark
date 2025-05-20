@@ -102,10 +102,14 @@ impl TryFrom<commands::Command> for RemoteCommand {
     fn try_from(value: commands::Command) -> Result<Self, Self::Error> {
         match value.command {
             Some(commands::command::Command::Request(request)) => {
-                Ok(Self::Request(request.try_into()?))
+                let mut request: RequestCommand = request.try_into()?;
+                request.single_request = false;
+                Ok(Self::Request(request))
             }
             Some(commands::command::Command::SingleRequest(request)) => {
-                Ok(Self::Request(request.try_into()?))
+                let mut request: RequestCommand = request.try_into()?;
+                request.single_request = true;
+                Ok(Self::Request(request))
             }
             Some(commands::command::Command::Shell(shell)) => Ok(Self::Shell(shell.try_into()?)),
             None => Err(anyhow!("No command")),

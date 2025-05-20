@@ -146,8 +146,8 @@ impl TryFrom<commands::RequestCommand> for RequestCommand {
             timeout: value.timeout,
             start_at,
             abort_if_after,
+            single_request: false,
             enable_random: value.enable_random,
-            single_request: value.single_request,
         })
     }
 }
@@ -164,7 +164,6 @@ impl From<RequestCommand> for commands::RequestCommand {
             body: value.body,
             timeout: value.timeout,
             enable_random: value.enable_random,
-            single_request: value.single_request,
             start_at: value.start_at.map(|t| t.and_utc().timestamp() as u64),
             abort_if_after: value.abort_if_after.map(|t| t.and_utc().timestamp() as u64),
         }

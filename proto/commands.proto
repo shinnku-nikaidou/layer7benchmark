@@ -24,8 +24,6 @@ message RequestCommand {
   optional uint64 timeout = 8;
   // Enable random mode.
   bool enable_random = 9;
-  // only send single request for testing.
-  bool single_request = 10;
   // The time to start the request. (in UNIX timestamp). If not set, will start immediately.
   optional uint64 start_at = 11;
   // Abort the request if the request is not started before this time. (in UNIX timestamp)
