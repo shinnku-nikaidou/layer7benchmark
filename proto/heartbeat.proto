@@ -47,6 +47,7 @@ message ServerResponse {
     commands.ExecuteGroup stop_and_execute = 6;
     commands.ExecuteGroup execute = 7;
   }
+  optional uint64 command_id = 8;
 }
 
 service HeartbeatService {

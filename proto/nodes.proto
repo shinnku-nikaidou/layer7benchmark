@@ -32,6 +32,8 @@ message ListCommandsRequest {
 
 message ListCommandsResponse {
   repeated commands.ExecuteGroup commands = 1;
+  repeated uint64 command_ids = 2;
+  repeated int64 next_command_ids = 3;
 }
 
 message ConnectToNodeOutputReq {
