@@ -104,6 +104,8 @@ impl ServerCommandExecutor {
     }
 
     pub async fn execute(&mut self, commands: ParallelCommands, id: u64) {
+        log::debug!("Executing commands: {:?}", commands);
+
         let now = chrono::Utc::now().naive_utc();
         if self.shutdown_tx.send(false).is_err() {
             self.status = ClientStatus::Idle;

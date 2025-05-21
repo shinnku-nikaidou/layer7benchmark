@@ -47,6 +47,7 @@ impl RequestCommand {
         statistic: Arc<crate::statistic::Statistic>,
         shutdown_rx: tokio::sync::watch::Receiver<bool>,
     ) -> anyhow::Result<()> {
+        log::debug!("Executing multi request");
         let ready = self.ready().await?;
         let requests = ready.build_full_requests(
             self.concurrent_count,

@@ -69,6 +69,7 @@ pub async fn send_requests(
     mut shutdown: watch::Receiver<bool>,
     statistic: Arc<crate::statistic::Statistic>,
 ) {
+    log::debug!("Sending requests {:?}", req);
     let s = statistic;
     let counter = &s.request_counter;
     let sc = &s.status_counter;
