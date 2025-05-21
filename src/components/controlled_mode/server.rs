@@ -62,6 +62,7 @@ pub async fn connect_to_server(url: Url) -> anyhow::Result<()> {
         let ServerResponse {
             server_timestamp,
             next_operation,
+            command_id,
         } = match executor
             .send_heartbeat(&mut grpc_client, &self_ip, now)
             .await
@@ -91,10 +92,10 @@ pub async fn connect_to_server(url: Url) -> anyhow::Result<()> {
                 }
                 NextOperation::StopAndExecute(commands) => {
                     executor.shutdown_workers().await?;
-                    executor.execute(commands.try_into()?, 0).await;
+                    executor.execute(commands.try_into()?, command_id.unwrap_or(0)).await;
                 }
                 NextOperation::Execute(commands) => {
-                    executor.execute(commands.try_into()?, 0).await;
+                    executor.execute(commands.try_into()?, command_id.unwrap_or(0)).await;
                 }
             }
         }
