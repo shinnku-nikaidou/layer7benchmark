@@ -1,6 +1,6 @@
+use anyhow::anyhow;
 use chrono::{DateTime, NaiveDateTime};
 use serde::Deserialize;
-use anyhow::anyhow;
 use tonic::transport::Channel;
 use url::Url;
 
@@ -12,12 +12,12 @@ pub mod l7b {
         tonic::include_proto!("l7b.heartbeat");
     }
 }
+use crate::components::controlled_mode::server::heartbeat::server_response::NextOperation;
+use crate::components::controlled_mode::server_command_executor::ServerCommandExecutor;
 use l7b::commands::CommandResultItem;
 use l7b::heartbeat::heartbeat_service_client::HeartbeatServiceClient;
 use l7b::heartbeat::*;
 pub use l7b::*;
-use crate::components::controlled_mode::server::heartbeat::server_response::NextOperation;
-use crate::components::controlled_mode::server_command_executor::ServerCommandExecutor;
 
 async fn get_self_ip() -> anyhow::Result<String> {
     #[derive(Deserialize)]
@@ -56,30 +56,32 @@ pub async fn connect_to_server(url: Url) -> anyhow::Result<()> {
     let self_ip = get_self_ip().await?;
     let mut grpc_client = HeartbeatServiceClient::connect(url.to_string()).await?;
     let mut executor = ServerCommandExecutor::new();
-    
+
     loop {
         let now = chrono::Utc::now().naive_utc();
         let ServerResponse {
             server_timestamp,
             next_operation,
-        } = match executor.send_heartbeat(
-            &mut grpc_client,
-            &self_ip,
-            now,
-        ).await {
-            Ok(heartbeat) => heartbeat,
+        } = match executor
+            .send_heartbeat(&mut grpc_client, &self_ip, now)
+            .await
+        {
+            Ok(heartbeat) => {
+                log::debug!("Received heartbeat: {:?}", heartbeat);
+                heartbeat
+            }
             Err(e) => {
                 log::error!("Failed to send heartbeat: {}", e);
                 tokio::time::sleep(std::time::Duration::from_secs(10)).await;
                 continue;
             }
         };
-        let server_time = DateTime::from_timestamp(server_timestamp as i64, 0).ok_or(
-            anyhow!("Invalid server timestamp"),
-        )?.naive_utc();
-        
+        let server_time = DateTime::from_timestamp(server_timestamp as i64, 0)
+            .ok_or(anyhow!("Invalid server timestamp"))?
+            .naive_utc();
+
         executor.clock_sync(server_time, now).await;
-        
+
         if let Some(next_operation) = next_operation {
             match next_operation {
                 NextOperation::KeepIdle(Empty {}) => {}
@@ -96,7 +98,7 @@ pub async fn connect_to_server(url: Url) -> anyhow::Result<()> {
                 }
             }
         }
-        
+
         tokio::time::sleep(std::time::Duration::from_secs(20)).await;
     }
 }

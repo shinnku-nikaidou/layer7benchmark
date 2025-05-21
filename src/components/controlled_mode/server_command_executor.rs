@@ -1,14 +1,14 @@
 use crate::components::controlled_mode::server::commands::CommandResultItem;
+use crate::components::controlled_mode::server::heartbeat::ServerResponse;
+use crate::components::controlled_mode::server::heartbeat::heartbeat_service_client::HeartbeatServiceClient;
 use crate::components::controlled_mode::server::{commands, heartbeat, send_heartbeat};
 use crate::components::controlled_mode::server_command::{ParallelCommands, RemoteCommand};
 use chrono::NaiveDateTime;
-use std::sync::Arc;
 use log::warn;
-use tokio::sync::{Mutex,  mpsc};
-use tokio::task::{ JoinSet};
+use std::sync::Arc;
+use tokio::sync::{Mutex, mpsc};
+use tokio::task::JoinSet;
 use tonic::transport::Channel;
-use crate::components::controlled_mode::server::heartbeat::heartbeat_service_client::HeartbeatServiceClient;
-use crate::components::controlled_mode::server::heartbeat::ServerResponse;
 
 #[derive(Debug, Clone, PartialEq, Eq, Copy)]
 pub enum ClientStatus {
@@ -54,7 +54,7 @@ pub struct ServerCommandExecutor {
 
     /// statistic
     statistic: Arc<crate::statistic::Statistic>,
-    
+
     shutdown_tx: tokio::sync::watch::Sender<bool>,
     shutdown_rx: tokio::sync::watch::Receiver<bool>,
 
@@ -111,7 +111,8 @@ impl ServerCommandExecutor {
             return;
         }
         self.status = ClientStatus::Executing { id };
-        let commands = commands.commands
+        let commands = commands
+            .commands
             .into_iter()
             .filter(|c| c.start_at().is_none())
             .filter(|c| match c.abort_if_after() {
@@ -122,12 +123,15 @@ impl ServerCommandExecutor {
         for command in commands {
             match command {
                 RemoteCommand::Request(request) => {
-                    if let Err(e) = request.execute(
-                        &mut self.worker_spawns,
-                        self.statistic.clone(),
-                        self.shutdown_rx.clone(), 
-                        self.output_sender.clone()
-                    ).await {
+                    if let Err(e) = request
+                        .execute(
+                            &mut self.worker_spawns,
+                            self.statistic.clone(),
+                            self.shutdown_rx.clone(),
+                            self.output_sender.clone(),
+                        )
+                        .await
+                    {
                         log::error!("Failed to execute request: {}", e);
                     }
                 }
@@ -137,13 +141,13 @@ impl ServerCommandExecutor {
             }
         }
     }
-    
+
     pub async fn check_idle(&mut self) {
         if self.worker_spawns.is_empty() {
             self.status = ClientStatus::Idle;
         }
     }
-    
+
     pub async fn send_heartbeat(
         &mut self,
         client: &mut HeartbeatServiceClient<Channel>,
@@ -153,12 +157,6 @@ impl ServerCommandExecutor {
         self.check_idle().await;
         let command_result = self.pop_results().await;
         let status = self.status;
-        send_heartbeat(
-            client,
-            self_ip,
-            command_result,
-            status,
-            now,
-        ).await
+        send_heartbeat(client, self_ip, command_result, status, now).await
     }
 }

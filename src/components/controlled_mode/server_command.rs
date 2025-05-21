@@ -135,7 +135,11 @@ impl TryFrom<commands::ExecuteGroup> for ParallelCommands {
 
     fn try_from(value: commands::ExecuteGroup) -> Result<Self, Self::Error> {
         Ok(Self {
-            commands: value.commands.into_iter().map(|c| c.try_into()).collect::<Result<_, _>>()?,
+            commands: value
+                .commands
+                .into_iter()
+                .map(|c| c.try_into())
+                .collect::<Result<_, _>>()?,
         })
     }
 }
