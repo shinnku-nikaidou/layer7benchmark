@@ -4,7 +4,7 @@ use crate::components::controlled_mode::server::heartbeat::heartbeat_service_cli
 use crate::components::controlled_mode::server::{commands, heartbeat, send_heartbeat};
 use crate::components::controlled_mode::server_command::{ParallelCommands, RemoteCommand};
 use chrono::NaiveDateTime;
-use log::warn;
+use log::{info, warn};
 use std::sync::Arc;
 use tokio::sync::{Mutex, mpsc};
 use tokio::task::JoinSet;
@@ -100,6 +100,7 @@ impl ServerCommandExecutor {
         self.worker_spawns.abort_all();
         self.status = ClientStatus::Idle;
         self.shutdown_tx.send(true)?;
+        info!("shutdown_workers done, killed");
         Ok(())
     }
 
@@ -143,6 +144,7 @@ impl ServerCommandExecutor {
                 }
             }
         }
+        
     }
 
     pub async fn check_idle(&mut self) {
