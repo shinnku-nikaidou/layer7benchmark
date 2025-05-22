@@ -78,25 +78,7 @@ pub async fn run(args: Args) -> Result<()> {
     }
 
     tokio::spawn(shutdown::handle_shutdown_signals(shutdown_tx.clone()));
-    wait_for_completion(time, shutdown_tx.clone(), shutdown_rx.clone()).await?;
+    shutdown::wait_for_completion(time, shutdown_tx.clone(), shutdown_rx.clone()).await?;
     Ok(())
 }
 
-async fn wait_for_completion(
-    time: Duration,
-    shutdown_tx: watch::Sender<bool>,
-    mut shutdown_rx: watch::Receiver<bool>,
-) -> Result<()> {
-    tokio::select! {
-        _ = tokio::time::sleep(time) => {
-            info!("Time limit reached");
-        }
-        Ok(_) = shutdown_rx.changed() => {
-            info!("Received shutdown signal");
-        }
-    }
-    shutdown_tx
-        .send(true)
-        .map_err(|e| anyhow::anyhow!("Failed to send shutdown signal: {}", e))?;
-    Ok(())
-}

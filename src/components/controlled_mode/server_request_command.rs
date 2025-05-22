@@ -3,6 +3,7 @@ use crate::components::client::executor::BenchmarkReady;
 use crate::components::client::request::send_requests;
 use crate::components::controlled_mode::server::commands;
 use crate::components::controlled_mode::server::commands::CommandResultItem;
+use crate::components::shutdown;
 use anyhow::anyhow;
 use chrono::{DateTime, NaiveDateTime};
 use std::net::IpAddr;
@@ -71,9 +72,13 @@ impl RequestCommand {
         &self,
         join_set: &mut tokio::task::JoinSet<()>,
         statistic: Arc<crate::statistic::Statistic>,
+        shutdown_tx: tokio::sync::watch::Sender<bool>,
         shutdown_rx: tokio::sync::watch::Receiver<bool>,
         output_stream: tokio::sync::mpsc::Sender<CommandResultItem>,
     ) -> anyhow::Result<()> {
+        let time = self.time.unwrap_or(0);
+        log::debug!("Executing request command: {:?}", self);
+
         if self.single_request {
             let response = self.execute_single().await?;
             output_stream
@@ -91,7 +96,14 @@ impl RequestCommand {
                 .await
                 .map_err(|e| anyhow!("Failed to send command result: {}", e))?;
         } else {
-            self.execute_multi(join_set, statistic, shutdown_rx).await?;
+            tokio::spawn(shutdown::wait_for_completion(
+                std::time::Duration::from_secs(time),
+                shutdown_tx.clone(),
+                shutdown_rx.clone(),
+            ));
+            println!("in side this, tag");
+            self.execute_multi(join_set, statistic, shutdown_rx.clone())
+                .await?;
         }
         Ok(())
     }

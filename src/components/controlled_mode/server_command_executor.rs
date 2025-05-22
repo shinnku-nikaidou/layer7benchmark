@@ -107,11 +107,11 @@ impl ServerCommandExecutor {
         log::debug!("Executing commands: {:?}", commands);
 
         let now = chrono::Utc::now().naive_utc();
-        if self.shutdown_tx.send(false).is_err() {
-            self.status = ClientStatus::Idle;
-            log::error!("Failed to send shutdown signal as false to workers");
-            return;
-        }
+        // if self.shutdown_tx.send(false).is_err() {
+        //     self.status = ClientStatus::Idle;
+        //     log::error!("Failed to send shutdown signal as false to workers");
+        //     return;
+        // }
         self.status = ClientStatus::Executing { id };
         let commands = commands
             .commands
@@ -129,6 +129,7 @@ impl ServerCommandExecutor {
                         .execute(
                             &mut self.worker_spawns,
                             self.statistic.clone(),
+                            self.shutdown_tx.clone(),
                             self.shutdown_rx.clone(),
                             self.output_sender.clone(),
                         )
