@@ -1,0 +1,41 @@
+{
+  // Use IntelliSense to learn about possible attributes.
+  // Hover to view descriptions of existing attributes.
+  // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "type": "lldb",
+      "request": "launch",
+      "name": "Debug executable 'layer7benchmark'",
+      "cargo": {
+        "args": ["build", "--bin=layer7benchmark", "--package=layer7benchmark"],
+        "filter": {
+          "name": "layer7benchmark",
+          "kind": "bin"
+        }
+      },
+      "args": ["--server", "grpc://localhost:50051", "--log-level", "debug"],
+      "cwd": "${workspaceFolder}"
+    },
+    {
+      "type": "lldb",
+      "request": "launch",
+      "name": "Debug unit tests in executable 'layer7benchmark'",
+      "cargo": {
+        "args": [
+          "test",
+          "--no-run",
+          "--bin=layer7benchmark",
+          "--package=layer7benchmark"
+        ],
+        "filter": {
+          "name": "layer7benchmark",
+          "kind": "bin"
+        }
+      },
+      "args": [],
+      "cwd": "${workspaceFolder}"
+    }
+  ]
+}

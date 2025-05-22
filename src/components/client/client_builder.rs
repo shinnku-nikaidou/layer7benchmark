@@ -132,9 +132,13 @@ impl ClientIpSelectMode {
                     .map_err(|e| ClientBuildError::DNSLookupFailed(e.to_string()))?
                     .map(|socket_addr| socket_addr.ip())
                     .collect();
+                log::info!("Resolved IPs: {:?}", ips);
                 Ok(ips)
             }
-            ClientIpSelectMode::Locked(ip) => Ok(Box::new([ip])),
+            ClientIpSelectMode::Locked(ip) => {
+                log::info!("Using fixed IP: {}", ip);
+                Ok(Box::new([ip]))
+            }
             ClientIpSelectMode::Random(ips) => Ok(ips.into_boxed_slice()),
         }
     }

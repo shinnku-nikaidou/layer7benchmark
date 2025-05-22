@@ -1,5 +1,6 @@
 use anyhow::anyhow;
 use chrono::{DateTime, NaiveDateTime};
+use log::debug;
 use serde::Deserialize;
 use tonic::transport::Channel;
 use url::Url;
@@ -48,6 +49,7 @@ pub async fn send_heartbeat(
         command_result: command_result.clone().into(),
         ip: self_ip.to_owned(),
     };
+    debug!("Sending heartbeat: {:?}", heartbeat);
     let response = client.heartbeat(heartbeat).await?;
     Ok(response.into_inner())
 }
@@ -92,10 +94,14 @@ pub async fn connect_to_server(url: Url) -> anyhow::Result<()> {
                 }
                 NextOperation::StopAndExecute(commands) => {
                     executor.shutdown_workers().await?;
-                    executor.execute(commands.try_into()?, command_id.unwrap_or(0)).await;
+                    executor
+                        .execute(commands.try_into()?, command_id.unwrap_or(0))
+                        .await;
                 }
                 NextOperation::Execute(commands) => {
-                    executor.execute(commands.try_into()?, command_id.unwrap_or(0)).await;
+                    executor
+                        .execute(commands.try_into()?, command_id.unwrap_or(0))
+                        .await;
                 }
             }
         }
