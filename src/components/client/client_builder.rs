@@ -16,6 +16,7 @@ pub enum ClientBuildError {
     #[error("URL is missing host component")]
     URLMissingHost,
 
+    #[allow(dead_code)]
     #[error("URL is required")]
     UrlIsRequired,
 
