@@ -46,7 +46,7 @@ pub struct Args {
     /// If the request takes longer than this time, it will be considered a timeout
     /// It is different from the get stream timeout, which is applied to the full request body,
     /// which in that case the time out is set to 60 seconds, different from the request timeout
-    #[arg(long = "timeout", default_value_t = 10)]
+    #[arg(long = "timeout", default_value_t = 30)]
     pub timeout: u64,
 
     /// ⚠️ If you use this option, the --url option grammar will be changed.
