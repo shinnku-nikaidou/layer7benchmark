@@ -5,7 +5,9 @@ use crate::components::controlled_mode::server::{commands, heartbeat, send_heart
 use crate::components::controlled_mode::server_command::{ParallelCommands, RemoteCommand};
 use chrono::NaiveDateTime;
 use log::{info, warn};
+use serde::de;
 use std::sync::Arc;
+use std::time::Duration;
 use tokio::sync::{Mutex, mpsc};
 use tokio::task::JoinSet;
 use tonic::transport::Channel;
@@ -104,7 +106,7 @@ impl ServerCommandExecutor {
         Ok(())
     }
 
-    pub async fn execute(&mut self, commands: ParallelCommands, id: u64) {
+    pub async fn execute(&mut self, commands: ParallelCommands, id: u64) -> anyhow::Result<u64> {
         log::debug!("Executing commands: {:?}", commands);
 
         let now = chrono::Utc::now().naive_utc();
@@ -123,6 +125,16 @@ impl ServerCommandExecutor {
                 None => true,
             })
             .collect::<Vec<_>>();
+        let max_time = commands
+            .iter()
+            .filter_map(|c| match c {
+                RemoteCommand::Request(c) => c.time,
+                RemoteCommand::Shell(_) => Some(0),
+            })
+            .collect::<Vec<u64>>()
+            .iter()
+            .fold(0, |arg0, arg1: &u64| u64::max(arg0, *arg1));
+        log::debug!("max_time: {}", max_time);
         for command in commands {
             match command {
                 RemoteCommand::Request(request) => {
@@ -144,7 +156,7 @@ impl ServerCommandExecutor {
                 }
             }
         }
-        
+        Ok(max_time)
     }
 
     pub async fn check_idle(&mut self) {

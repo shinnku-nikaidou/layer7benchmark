@@ -58,9 +58,16 @@ pub async fn connect_to_server(url: Url) -> anyhow::Result<()> {
     let self_ip = get_self_ip().await?;
     let mut grpc_client = HeartbeatServiceClient::connect(url.to_string()).await?;
     let mut executor = ServerCommandExecutor::new();
+    let mut stop_time = chrono::Utc::now().naive_utc() + chrono::Duration::days(30);
 
     loop {
         let now = chrono::Utc::now().naive_utc();
+        if now > stop_time {
+            log::info!("Stopping execution as the time limit has been reached.");
+            executor.shutdown_workers().await?;
+            stop_time = chrono::Utc::now().naive_utc() + chrono::Duration::days(30);
+        }
+
         let ServerResponse {
             server_timestamp,
             next_operation,
@@ -91,17 +98,38 @@ pub async fn connect_to_server(url: Url) -> anyhow::Result<()> {
                 NextOperation::ContinueCurrent(Empty {}) => {}
                 NextOperation::StopCurrent(Empty {}) => {
                     executor.shutdown_workers().await?;
+                    stop_time = chrono::Utc::now().naive_utc() + chrono::Duration::days(30);
                 }
                 NextOperation::StopAndExecute(commands) => {
                     executor.shutdown_workers().await?;
-                    executor
+                    stop_time = chrono::Utc::now().naive_utc() + chrono::Duration::days(30);
+                    let max_time = executor
                         .execute(commands.try_into()?, command_id.unwrap_or(0))
                         .await;
+                    match max_time {
+                        Ok(max_time) => {
+                            stop_time = now + chrono::Duration::seconds(max_time as i64);
+                        }
+                        Err(e) => {
+                            log::error!("Failed to execute commands: {}", e);
+                            continue;
+                        }
+                    }
                 }
                 NextOperation::Execute(commands) => {
-                    executor
+                    stop_time = chrono::Utc::now().naive_utc() + chrono::Duration::days(30);
+                    let max_time = executor
                         .execute(commands.try_into()?, command_id.unwrap_or(0))
                         .await;
+                    match max_time {
+                        Ok(max_time) => {
+                            stop_time = now + chrono::Duration::seconds(max_time as i64);
+                        }
+                        Err(e) => {
+                            log::error!("Failed to execute commands: {}", e);
+                            continue;
+                        }
+                    }
                 }
             }
         }
